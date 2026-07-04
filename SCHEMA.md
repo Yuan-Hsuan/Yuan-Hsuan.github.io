@@ -7,7 +7,7 @@ folders stay separate for humans, but unified for the tools (CLI + site generato
 每個內容檔案的檔頭都用**同一套 YAML frontmatter**。這是「資料夾分開、工具統一」能同時成立的唯一規矩。
 
 > This file is the source of truth. The CLI and the site generator both parse against it.
-> Both repos (`Yuan-Hsuan.github.io` and `prep-private`) follow this schema.
+> Both repos (`Yuan-Hsuan.github.io` and `mind`) follow this schema.
 
 ---
 

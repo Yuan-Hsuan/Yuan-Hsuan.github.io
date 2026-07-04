@@ -10,7 +10,7 @@ This repo is the **public** half of a two-repo system:
 | repo | visibility | holds |
 |------|-----------|-------|
 | **`Yuan-Hsuan.github.io`** (this one) | 🌐 public | the HR-facing site + LeetCode solutions + AI notes |
-| `prep-private` | 🔒 private | resume, behavioral (BQ) stories, personal review state |
+| `mind` | 🔒 private | resume, behavioral (BQ) stories, personal review state |
 
 Both repos share one metadata contract — see [`SCHEMA.md`](./SCHEMA.md).
 
