@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yuan-Hsuan · Learning in Public</title>
+<style>
+  :root {
+    --bg:#ffffff; --fg:#1a1a2e; --muted:#5b5b76; --card:#f6f7fb; --border:#e3e4ee;
+    --accent:#4f46e5; --easy:#0a9d6e; --medium:#c98a00; --hard:#d1495b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1020; --fg:#e8e9f3; --muted:#a0a1bd; --card:#1a1b30; --border:#2a2c47;
+             --accent:#8b85ff; --easy:#34d399; --medium:#fbbf24; --hard:#fb7185; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang TC","Noto Sans TC",sans-serif;
+          background:var(--bg); color:var(--fg); }
+  a { color:var(--accent); }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  header { padding:56px 0 32px; }
+  h1 { font-size:2.2rem; margin:0 0 6px; }
+  .tag-line { color:var(--muted); font-size:1.05rem; margin:0 0 20px; }
+  .btns a { display:inline-block; margin:0 10px 8px 0; padding:8px 16px; border:1px solid var(--border);
+             border-radius:10px; text-decoration:none; background:var(--card); }
+  .stats { display:flex; gap:14px; flex-wrap:wrap; margin:22px 0 0; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 18px; }
+  .stat b { font-size:1.5rem; display:block; }
+  .stat span { color:var(--muted); font-size:.85rem; }
+  .controls { position:sticky; top:0; background:var(--bg); padding:16px 0; border-bottom:1px solid var(--border);
+               display:flex; gap:10px; flex-wrap:wrap; align-items:center; z-index:5; }
+  select, .controls input { padding:8px 10px; border-radius:9px; border:1px solid var(--border);
+             background:var(--card); color:var(--fg); font-size:.92rem; }
+  .count { color:var(--muted); font-size:.88rem; margin-left:auto; }
+  .grid { padding:20px 0 60px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:0 0 16px; }
+  .card-top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .card h3 { margin:0; font-size:1.15rem; flex:1 1 auto; }
+  .pill { font-size:.72rem; padding:3px 9px; border-radius:20px; border:1px solid var(--border); color:var(--muted); }
+  .diff-easy { color:var(--easy); border-color:var(--easy); }
+  .diff-medium { color:var(--medium); border-color:var(--medium); }
+  .diff-hard { color:var(--hard); border-color:var(--hard); }
+  .domain { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .tags { margin:10px 0 0; }
+  .tags span { font-size:.74rem; color:var(--muted); margin-right:8px; }
+  .prompt { margin:12px 0 0; padding:12px 14px; border-left:3px solid var(--accent); background:rgba(127,127,180,.08);
+             border-radius:0 8px 8px 0; }
+  .prompt small { color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-size:.68rem; }
+  .reveal-btn { margin:12px 0 0; padding:8px 16px; border:1px solid var(--accent); color:var(--accent);
+                 background:none; border-radius:9px; cursor:pointer; font-size:.9rem; }
+  .reveal-btn:hover { background:var(--accent); color:#fff; }
+  .body { display:none; margin-top:14px; border-top:1px dashed var(--border); padding-top:6px; }
+  .body.open { display:block; }
+  .body pre { background:rgba(127,127,180,.12); padding:12px 14px; border-radius:9px; overflow-x:auto; }
+  .body code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.86em; }
+  .body pre code { font-size:.82rem; }
+  .body table { border-collapse:collapse; width:100%; margin:10px 0; font-size:.9rem; display:block; overflow-x:auto; }
+  .body th, .body td { border:1px solid var(--border); padding:6px 10px; text-align:left; }
+  .body blockquote { margin:10px 0; padding:8px 14px; border-left:3px solid var(--muted); color:var(--muted); }
+  footer { color:var(--muted); font-size:.85rem; padding:30px 0; border-top:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Yuan-Hsuan Wen</h1>
+    <p class="tag-line">Learning in Public — a living log of my CS / AI / LeetCode practice.<br>
+       學習日誌：真實、持續、看得到成長。</p>
+    <div class="btns">
+      <a href="https://github.com/Yuan-Hsuan" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/Yuan-Hsuan?tab=repositories" target="_blank" rel="noopener">Repositories ↗</a>
+    </div>
+    <p style="margin:18px 0 6px; color:var(--muted); font-size:.85rem;">Contribution activity</p>
+    <img src="https://ghchart.rshah.org/Yuan-Hsuan" alt="GitHub contribution graph for Yuan-Hsuan"
+         loading="lazy" style="max-width:100%; border:1px solid var(--border); border-radius:10px; padding:8px; background:var(--card);">
+    <div class="stats">
+      <div class="stat"><b>7</b><span>cards</span></div>
+      <div class="stat"><b>4</b><span>LeetCode</span></div>
+      <div class="stat"><b>3</b><span>AI notes</span></div>
+      <div class="stat"><b>1.4</b><span>avg mastery /5</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <select id="domain"><option value="">All domains</option>
+      <option value="leetcode">LeetCode</option><option value="ai">AI Knowledge</option></select>
+    <select id="difficulty"><option value="">All difficulty</option>
+      <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+    <select id="tag"><option value="">All topics</option></select>
+    <input id="search" type="search" placeholder="search…" style="flex:0 1 160px;">
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <footer>Built from markdown by <code>site/build.py</code> — static, no backend. Only <code>visibility:public</code> cards shown.</footer>
+</div>
+
+<script>
+const CARDS = [{"id": "lc-binary-search", "domain": "leetcode", "title": "Binary Search (the template)", "tags": ["binary-search", "array"], "difficulty": "easy", "mastery": 0, "source": "https://leetcode.com/problems/binary-search/", "body_html": "<h3>Problem</h3>\n<p>Given a sorted array and a target, return its index or -1. Must be O(log n).</p>\n<h3>Pattern insight</h3>\n<p><strong>Halve the search space each step.</strong> 每一步砍一半。 The real skill isn't this problem — it's the <strong>template</strong> you reuse for every \"find the boundary\" variant (first/last position, search-insert, rotated array, or *any* monotonic answer space). 重點不是這題，是這個可以套到所有「找邊界」變體的模板。</p>\n<h3>Solution</h3>\n<pre><code class=\"lang-python\">def search(nums: list[int], target: int) -&gt; int:\n    lo, hi = 0, len(nums) - 1        # inclusive bounds\n    while lo &lt;= hi:\n        mid = (lo + hi) // 2         # in Python no overflow; in C use lo + (hi-lo)//2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] &lt; target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1</code></pre>\n<h3>Complexity</h3>\n<ul><li>Time <strong>O(log n)</strong>, Space <strong>O(1)</strong>.</li></ul>\n<h3>The two traps 兩個坑</h3>\n<ol><li><strong>Bounds consistency:</strong> <code>hi = len-1</code> with <code>while lo &lt;= hi</code> (inclusive). Mixing <code>hi = len</code> with <code>&lt;=</code> loops forever.</li><li><strong>Monotonic thinking:</strong> binary search applies whenever the predicate \"is the answer ≥ x?\" is monotonic — not only literal sorted arrays.</li></ol>\n<h3>Recall prompt</h3>\n<blockquote>Write binary search and state the invariant that keeps <code>lo</code>/<code>hi</code> consistent. (inclusive bounds + <code>while lo &lt;= hi</code>; each step discards the half that can't contain the target)</blockquote>"}, {"id": "lc-two-sum", "domain": "leetcode", "title": "Two Sum", "tags": ["hash-map", "array"], "difficulty": "easy", "mastery": 3, "source": "https://leetcode.com/problems/two-sum/", "body_html": "<h3>Problem</h3>\n<p>Given an array <code>nums</code> and a target <code>t</code>, return the indices of the two numbers that add up to <code>t</code>. Exactly one solution exists; can't reuse an element.</p>\n<h3>Pattern insight</h3>\n<p><strong>Complement lookup with a hash map.</strong> 用雜湊表存「還缺哪個數」。 As you scan, for each <code>x</code> you need <code>t - x</code>. Instead of searching the rest of the array (O(n)), remember every number you've already seen in a hash map, so the lookup is O(1). 一邊掃、一邊把看過的數丟進 map；要找的補數直接 O(1) 查表，不用回頭再掃一次。</p>\n<h3>Solution</h3>\n<pre><code class=\"lang-python\">def two_sum(nums: list[int], t: int) -&gt; list[int]:\n    seen = {}                      # value -&gt; index\n    for i, x in enumerate(nums):\n        if t - x in seen:          # complement already seen?\n            return [seen[t - x], i]\n        seen[x] = i\n    return []</code></pre>\n<h3>Complexity</h3>\n<ul><li>Time <strong>O(n)</strong> — one pass.</li><li>Space <strong>O(n)</strong> — the hash map.</li><li>Key trade: spend O(n) memory to turn an O(n) inner search into O(1). 用空間換時間。</li></ul>\n<h3>Recall prompt</h3>\n<blockquote>Two Sum in one pass — what do you store in the map, and what do you look up for each element? (store: seen value→index; look up: <code>target - current</code>)</blockquote>"}, {"id": "lc-longest-substring-no-repeat", "domain": "leetcode", "title": "Longest Substring Without Repeating Characters", "tags": ["sliding-window", "hash-map", "string"], "difficulty": "medium", "mastery": 0, "source": "https://leetcode.com/problems/longest-substring-without-repeating-characters/", "body_html": "<h3>Problem</h3>\n<p>Given a string, find the length of the longest substring with no repeating characters.</p>\n<h3>Pattern insight</h3>\n<p><strong>Sliding window with a last-seen map.</strong> 可變長度的滑動視窗 + 記錄每個字最後出現位置。 Grow the window on the right; when the right char was seen *inside* the current window, jump the left edge past its previous position. The window always holds a valid (unique) substring. 視窗右邊擴張，遇到重複就把左邊界跳到「上次出現位置的下一格」。</p>\n<h3>Solution</h3>\n<pre><code class=\"lang-python\">def length_of_longest_substring(s: str) -&gt; int:\n    last = {}          # char -&gt; last index seen\n    left = 0\n    best = 0\n    for right, c in enumerate(s):\n        if c in last and last[c] &gt;= left:\n            left = last[c] + 1     # shrink window past the duplicate\n        last[c] = right\n        best = max(best, right - left + 1)\n    return best</code></pre>\n<h3>Complexity</h3>\n<ul><li>Time <strong>O(n)</strong> — each index enters/leaves the window once.</li><li>Space <strong>O(min(n, charset))</strong>.</li></ul>\n<h3>Recall prompt</h3>\n<blockquote>Longest substring with all-unique chars — window type and the key move on a duplicate? (variable-size sliding window; on a repeat inside the window, jump <code>left</code> to <code>last[c]+1</code>)</blockquote>"}, {"id": "lc-valid-palindrome", "domain": "leetcode", "title": "Valid Palindrome", "tags": ["two-pointers", "string"], "difficulty": "easy", "mastery": 0, "source": "https://leetcode.com/problems/valid-palindrome/", "body_html": "<h3>Problem</h3>\n<p>Given a string, return True if it reads the same forward and backward, considering only alphanumeric characters and ignoring case.</p>\n<h3>Pattern insight</h3>\n<p><strong>Two pointers from both ends, walking inward.</strong> 左右兩個指標往中間夾。 No extra string needed — compare <code>s[l]</code> and <code>s[r]</code>, skip non-alphanumeric, move inward. Anytime you compare a sequence with its mirror, two-pointers beats building a reversed copy (O(1) space).</p>\n<h3>Solution</h3>\n<pre><code class=\"lang-python\">def is_palindrome(s: str) -&gt; bool:\n    l, r = 0, len(s) - 1\n    while l &lt; r:\n        while l &lt; r and not s[l].isalnum(): l += 1\n        while l &lt; r and not s[r].isalnum(): r -= 1\n        if s[l].lower() != s[r].lower():\n            return False\n        l += 1; r -= 1\n    return True</code></pre>\n<h3>Complexity</h3>\n<ul><li>Time <strong>O(n)</strong>, Space <strong>O(1)</strong> — no reversed copy.</li></ul>\n<h3>Recall prompt</h3>\n<blockquote>Check a palindrome ignoring punctuation/case with O(1) space — what technique, and how do you handle the non-alphanumeric chars? (two pointers inward; inner while-loops skip non-alnum)</blockquote>"}, {"id": "ai-attention", "domain": "ai", "title": "Attention (scaled dot-product)", "tags": ["transformers", "attention", "deep-learning"], "difficulty": "medium", "mastery": 2, "source": "https://arxiv.org/abs/1706.03762", "body_html": "<h3>Idea</h3>\n<p>Attention lets each token <strong>pull information from every other token</strong>, weighted by relevance. 每個 token 依「相關度」從其他所有 token 取資訊，權重是學出來的。</p>\n<h3>Why / intuition</h3>\n<p>A word's meaning depends on context. Attention computes, for each query token, a <strong>weighted average of value vectors</strong>, where the weights come from how well the query matches each key. 相關度 = query 跟 key 的相似度 → softmax → 拿去加權平均 value。</p>\n<h3>Example (shapes/math)</h3>\n<p>For sequence length <code>n</code>, model dim <code>d_k</code>:</p>\n<pre><code>Q, K, V : (n, d_k)\nscores  = Q @ K.T            # (n, n)   query·key similarity\nscaled  = scores / sqrt(d_k) # keep variance ~1 so softmax isn't saturated\nweights = softmax(scaled)    # (n, n)   each row sums to 1\nout     = weights @ V        # (n, d_k) weighted average of values</code></pre>\n<p>The <code>/ sqrt(d_k)</code> matters: without it, large dot products push softmax into tiny gradients. 除以 sqrt(d_k) 是為了控制方差，否則 softmax 會飽和、梯度變小。</p>\n<h3>Recall prompt</h3>\n<blockquote>Write the scaled dot-product attention formula and say why we divide by sqrt(d_k). (softmax(QKᵀ/√d_k)·V ; the scale keeps dot-product variance ~1 so softmax stays in a good gradient region)</blockquote>\n<p>&lt;!-- Links to my CS224n notes live in the private prep repo / course repo. --&gt;</p>"}, {"id": "ai-softmax-cross-entropy", "domain": "ai", "title": "Softmax + Cross-Entropy", "tags": ["deep-learning", "classification", "loss"], "difficulty": "medium", "mastery": 2, "source": "", "body_html": "<h3>Idea</h3>\n<p><strong>Softmax</strong> turns raw scores (logits) into a probability distribution; <strong>cross-entropy</strong> measures how far that distribution is from the true label. Together they're the standard classification head. Softmax 把分數變機率，cross-entropy 量「預測分佈離正確答案多遠」。</p>\n<h3>Why / intuition</h3>\n<ul><li>Softmax: <code>p_i = exp(z_i) / Σ_j exp(z_j)</code> — exponentiate (all positive) then normalize (sums to 1).</li><li>Cross-entropy for a one-hot target: <code>L = -log(p_correct)</code>. Only the correct class's probability</li></ul>\n<p>  matters; push it toward 1. 目標是把正確類別的機率推向 1。</p>\n<h3>Example (shapes/math)</h3>\n<pre><code>logits z : (batch, C)\np        = softmax(z)          # (batch, C), each row sums to 1\nloss     = -log(p[correct])    # scalar per example, then mean over batch</code></pre>\n<p>The beautiful part — the gradient of softmax+CE w.r.t. logits is just:</p>\n<pre><code>dL/dz = p - y_onehot           # (batch, C)</code></pre>\n<p>Predicted minus target. That clean form is *why* they're always paired. 梯度就是「預測 − 真實」。</p>\n<h3>Two traps 兩個坑</h3>\n<ol><li><strong>Numerical stability:</strong> subtract <code>max(z)</code> before exp (softmax is shift-invariant) to avoid overflow.</li><li><strong>Don't double-softmax:</strong> frameworks' <code>CrossEntropyLoss</code> takes <strong>raw logits</strong>, not probabilities.</li></ol>\n<h3>Recall prompt</h3>\n<blockquote>What's the gradient of softmax + cross-entropy w.r.t. the logits, and why is that convenient? (<code>p - y</code>; predicted minus target → simple, stable backprop, which is why the two are always paired)</blockquote>"}, {"id": "ai-word-embeddings", "domain": "ai", "title": "Word Embeddings (why dense vectors)", "tags": ["nlp", "embeddings", "word2vec", "glove"], "difficulty": "easy", "mastery": 3, "source": "https://web.stanford.edu/class/cs224n/", "body_html": "<h3>Idea</h3>\n<p>Represent each word as a <strong>dense low-dimensional vector</strong> whose geometry encodes meaning — so similar words sit near each other. 用低維稠密向量表示詞，語義相近 → 向量相近。</p>\n<h3>Why / intuition</h3>\n<ul><li><strong>One-hot fails:</strong> every word gets its own dimension, all orthogonal → dot product of any two</li></ul>\n<p>  distinct words is 0, so the model can't tell \"cat\" is closer to \"dog\" than to \"car\".   獨熱編碼彼此正交，表達不出相似度。</p>\n<ul><li><strong>Distributional hypothesis:</strong> \"You shall know a word by the company it keeps.\" A word's meaning</li></ul>\n<p>  = the distribution of contexts it appears in. 詞義 = 它出現的上下文分佈。</p>\n<ul><li><strong>Embedding = structure-preserving compression:</strong> map sparse 10⁴-dim one-hot → dense 50–300 dim,</li></ul>\n<p>  keeping semantic similarity. Meaning becomes <strong>geometry</strong> (cosine / dot product).</p>\n<h3>Example (two philosophies)</h3>\n<ul><li><strong>Count-based (SVD):</strong> build a word×context co-occurrence matrix <code>A</code>, factor <code>A = U S Vᵀ</code>,</li></ul>\n<p>  take the word vector = rows of <code>U·S</code>. (⚠️ <code>S</code> holds <strong>singular values</strong> σ = √λ of <code>AᵀA</code>, *not*   eigenvalues. U = direction, S = importance.)</p>\n<ul><li><strong>Prediction-based (word2vec skip-gram):</strong> predict context words from a center word; uses a</li></ul>\n<p>  sigmoid with negative sampling, not a full softmax.</p>\n<ul><li><strong>Hybrid (GloVe):</strong> log-bilinear objective so <code>dot(w_i, w_j) ≈ log(co-occurrence)</code>; captures</li></ul>\n<p>  probability <strong>ratios</strong>.</p>\n<h3>Recall prompt</h3>\n<blockquote>Why can't one-hot vectors express similarity, and what's the one-sentence idea that fixes it? (one-hot vectors are orthogonal → dot product 0; distributional hypothesis → learn dense vectors where nearby = similar)</blockquote>"}];
+const TAGS = ["array", "attention", "binary-search", "classification", "deep-learning", "embeddings", "glove", "hash-map", "loss", "nlp", "sliding-window", "string", "transformers", "two-pointers", "word2vec"];
+const grid = document.getElementById('grid');
+const $ = id => document.getElementById(id);
+
+const tagSel = $('tag');
+TAGS.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; tagSel.appendChild(o); });
+
+const diffPill = d => d ? `<span class="pill diff-${d}">${d}</span>` : '';
+const domLabel = d => d === 'ai' ? 'AI' : 'LeetCode';
+
+function render(list) {
+  grid.innerHTML = list.map((c, idx) => `
+    <div class="card">
+      <div class="card-top">
+        <h3>${c.title}</h3>
+        <span class="pill domain">${domLabel(c.domain)}</span>
+        ${diffPill(c.difficulty)}
+        <span class="pill">mastery ${c.mastery}/5</span>
+      </div>
+      <div class="tags">${c.tags.map(t => `<span>#${t}</span>`).join('')}</div>
+      <button class="reveal-btn" data-i="${idx}">Reveal ▸</button>
+      <div class="body" id="body-${idx}">${c.body_html}</div>
+    </div>`).join('') || '<p style="color:var(--muted)">No cards match.</p>';
+  $('count').textContent = list.length + ' / ' + CARDS.length + ' cards';
+  grid.querySelectorAll('.reveal-btn').forEach(b => b.onclick = () => {
+    const body = $('body-' + b.dataset.i);
+    body.classList.toggle('open');
+    b.textContent = body.classList.contains('open') ? 'Hide ▾' : 'Reveal ▸';
+  });
+}
+
+function apply() {
+  const d = $('domain').value, diff = $('difficulty').value, tag = $('tag').value;
+  const q = $('search').value.toLowerCase();
+  render(CARDS.filter(c =>
+    (!d || c.domain === d) && (!diff || c.difficulty === diff) &&
+    (!tag || c.tags.includes(tag)) &&
+    (!q || (c.title + ' ' + c.tags.join(' ')).toLowerCase().includes(q))
+  ));
+}
+['domain','difficulty','tag','search'].forEach(id => $(id).addEventListener('input', apply));
+render(CARDS);
+</script>
+</body>
+</html>
