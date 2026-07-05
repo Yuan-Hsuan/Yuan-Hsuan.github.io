@@ -1,0 +1,52 @@
+---
+id: lc-sort-colors
+domain: leetcode
+title: 75. Sort Colors
+tags: [array, two-pointers, sorting]
+difficulty: medium
+status: review
+mastery: 3
+importance: 3
+optimal: false
+source: https://leetcode.com/problems/sort-colors/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+For any general sorting problem, the standard algorithms like QuickSort or MergeSort require
+**O(N log N)** time. However, we can observe a strict constraint here: the array contains only three
+distinct elements (0, 1, and 2). This lets us drop to **O(N)** with a Counting Sort — count the
+frequencies in the first pass and overwrite the array in the second (a two-pass solution).
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+The two-pass counting sort still walks the array twice. But because there are only three possible
+values, the ordering is fully determined the moment we know each element's category — we should be
+able to finish it in a single pass.
+
+### The Strategy: The Three-Zone Architecture (Dutch National Flag)
+To achieve the absolute optimal **One-Pass** solution, use a three-pointer approach. We mentally
+divide the array into **three zones**: the `0` zone on the far left, the `2` zone on the far right,
+and the `1` zone in the middle. An **Explorer** pointer (`i`) iterates through the array alongside a
+`left` and `right` boundary.
+
+### The Precise Calculation / Execution
+The core action is simple: if the Explorer encounters a `0`, swap it with the `left` pointer; if it
+encounters a `2`, swap it with the `right` pointer. The subtle part is how the Explorer moves after
+these swaps — it depends entirely on whether the swapped element comes from the verified past or the
+unexplored future:
+
+- **When swapping with the `left`:** the Explorer can **safely step forward (`i++`)**. Because the
+  Explorer has already scanned past the `left` boundary, the number swapped back from the left is
+  already verified — it can only be a `1`.
+- **When swapping with the `right` (encountering a `2`):** I **must hold the Explorer in place**.
+  The element coming from the right is pulled from the unexplored wilderness — it might be a `0`,
+  `1`, or `2`. Because it is completely unverified, my Explorer must stay at the exact same position
+  to evaluate this new element in the very next iteration.
+
+## 🛠️ Solution
+Run the Explorer `i` from `left` up to `right`. On `nums[i] == 0`, swap with `nums[left]` and
+advance both `left` and `i`. On `nums[i] == 2`, swap with `nums[right]` and only decrement `right`
+(hold `i`). On `nums[i] == 1`, just advance `i`. This sorts the array in a single pass — **O(N)**
+time, **O(1)** space.

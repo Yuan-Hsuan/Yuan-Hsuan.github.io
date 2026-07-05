@@ -1,0 +1,78 @@
+---
+id: lc-add-two-numbers
+domain: leetcode
+title: 2. Add Two Numbers
+tags: [linked-list]
+difficulty: medium
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/add-two-numbers/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+One tempting route is to convert both lists into integers, add them, then rebuild a list from the
+result. That breaks the moment the numbers overflow a machine integer — the lists can be far longer
+than any built-in type. So we should add digit by digit instead.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+The digits are already stored least-significant-first, which is exactly the order elementary-school
+addition walks. Just like manual math, we add the two current nodes plus the `carry`: the new digit is
+the remainder (modulo), and the carry is the quotient (division).
+
+### The Strategy: Dummy Head + Unified Loop
+- **Dummy Head:** to avoid messy initialization logic for the very first result node, attach new nodes
+  to a dummy and simply return `dummy.next` at the end.
+- **Single unified loop:** instead of separate loops for uneven lists and a leftover carry, one loop
+  runs as long as either list has remaining nodes **or** the carry is non-zero (e.g. `99 + 1 = 100`).
+
+### The Precise Calculation / Execution
+Read each node's value (0 when a list is exhausted), compute `sum = n1 + n2 + carry`, append
+`sum % 10`, update `carry = sum / 10`, and advance whichever list pointers still have nodes.
+
+## 🛠️ Optimization
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+
+        // 1. Stack Allocation 解決 Memory Leak，這是一個大亮點
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        int carry = 0;
+
+        // 2. 利用隱式轉換讓 Unified Loop 條件更簡潔
+        while (l1 || l2 || carry) {
+            int n1 = l1 ? l1->val : 0;
+            int n2 = l2 ? l2->val : 0;
+
+            int sum = n1 + n2 + carry;
+            curr->next = new ListNode(sum % 10);
+            carry = sum / 10;
+
+            curr = curr->next;
+
+            // 3. 簡潔的指標推進
+            if (l1) l1 = l1->next;
+            if (l2) l2 = l2->next;
+        }
+
+        return dummy.next;
+    }
+};
+```

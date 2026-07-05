@@ -1,0 +1,71 @@
+---
+id: lc-remove-element
+domain: leetcode
+title: 27. Remove Element
+tags: [array, two-pointers]
+difficulty: easy
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/remove-element/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The order-preserving two-pointer overwrite: keep a `write` pointer, scan every element, and copy any
+element that is not `val` to the write position. Return `write` as the new length. This does a write
+for every kept element.
+
+```c++
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+
+        int write = 0;
+        for (int num: nums) {
+            if (num != val) {
+                nums[write++] = num;
+            }
+        }
+
+        return write;
+    }
+};
+```
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+When only a few elements equal `val`, the order-preserving approach still shifts nearly every
+element forward. If we do not need to preserve order, we can skip almost all of those writes.
+
+### The Strategy: Swap With the Last Element
+When we find `val`, overwrite it with the element currently at the end of the array and shrink the
+logical array size, instead of moving all the kept elements.
+
+### The Precise Calculation / Execution
+Walk index `i` from the front with `n` as the current size. If `nums[i] == val`, copy `nums[n - 1]`
+into `nums[i]` and decrement `n` — crucially, do **not** advance `i`, because the swapped-in value
+must be re-checked. Otherwise increment `i`. Return `n`.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int i = 0;
+        int n = nums.size();
+        while (i < n) {
+            if (nums[i] == val) {
+                nums[i] = nums[n - 1];
+                // reduce array size by one
+                n--;
+            } else {
+                i++;
+            }
+        }
+        return n;
+    }
+};
+```

@@ -1,0 +1,57 @@
+---
+id: lc-minimum-operations-to-make-array-non-decreasing
+domain: leetcode
+title: 3914. Minimum Operations to Make Array Non Decreasing
+tags: [greedy]
+difficulty: medium
+status: review
+mastery: 5
+importance: 5
+optimal: true
+source: https://leetcode.com/problems/minimum-operations-to-make-array-non-decreasing/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+If we could only increment a *single* element at a time, then each element would have to be measured
+against the **running maximum** to know how far behind it is, and we would pay for that full absolute
+gap. But the allowed operation increments a whole subarray at once, which breaks that intuition.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+**The "Running Max" Illusion (全域最大值的錯覺).** Intuitively, we think an element must be evaluated
+against the "running maximum" to know how far behind it is. If we could only increment *single*
+elements, this would be true. However, the subarray operation creates a chain reaction that shatters
+this illusion.
+*(直觀上，我們認為必須將元素與「歷史最大值」比較，才知道它落後了多少。如果我們只能增加「單一」元素，這的確是真的。然而，子陣列操作產生了連鎖反應，打破了這個錯覺。)*
+
+### The Strategy: Gap Inheritance via Subarray Operations (斷層的繼承與填補)
+Here is the core logic: any operation applied to `nums[i-1]` to help it catch up to the running
+maximum can *also* be applied to `nums[i]` simultaneously (since it's a subarray). This means the
+absolute gap between `nums[i]` and the running maximum is **implicitly covered by the operations we
+already triggered for the previous elements**.
+*(這是核心邏輯：任何為了讓 `nums[i-1]` 追上最大值而施加的操作，都可以「同時」施加在 `nums[i]` 身上（因為這是一個子陣列）。這意味著 `nums[i]` 與全域最大值之間的絕對落差，已經被我們為前面元素所觸發的操作給隱性地填補了。)*
+
+### The Precise Calculation / Execution
+**Relative drops as the true bottleneck (相對落差才是真正的瓶頸).** Because `nums[i]` gets a "free
+ride" from all operations acting on `nums[i-1]`, the *only* new operations we are forced to initiate
+at index `i` are those caused by the exact difference between `nums[i-1]` and `nums[i]`. Thus,
+summing up these local, relative drops mathematically equals the exact number of operations needed to
+bridge the global absolute gap.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    long long minOperations(vector<int>& nums) {
+        long long res = 0;
+
+        for (int i = 1; i < nums.size(); i++) {
+            res += max(nums[i-1] - nums[i], 0);
+        }
+
+        return res;
+    }
+};
+```

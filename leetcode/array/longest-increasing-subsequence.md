@@ -1,0 +1,40 @@
+---
+id: lc-longest-increasing-subsequence
+domain: leetcode
+title: 300. Longest Increasing Subsequence
+tags: [array, binary-search, dynamic-programming]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: false
+source: https://leetcode.com/problems/longest-increasing-subsequence/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+A straightforward dynamic-programming approach defines `dp[i]` as the length of the longest
+increasing subsequence ending at index `i`, checking every earlier element for each position. That
+costs O(N^2) time.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+**The Greedy strategy.** To build the longest increasing subsequence, we constantly compare the
+current number with the last number of our subsequence. To make our subsequence as long as possible,
+we need to make the last number **as small as possible**. This allows the sequence to grow slowly
+and maximizes our chances of appending more numbers later.
+
+### The Strategy: Patience Array + Binary Search
+To implement this, I use an array to store the **smallest ending number** for subsequences of
+different lengths. When iterating through the numbers, we have two scenarios:
+1. **Extend:** If `num` is strictly greater than the last element in our array, we simply append it
+   to extend the max length.
+2. **Replace:** If it's not, we use **Binary Search** to find the first element ≤ `num` and replace
+   it. This doesn't increase the current length, but it **lowers the threshold** for that position,
+   creating a better potential ending to make future extensions easier.
+
+## 🛠️ Solution
+**Complexity analysis.** Since we only scan the array once, which takes O(N), and inside the loop we
+perform a Binary Search which takes O(log N), the overall time complexity is perfectly optimized down
+to O(N log N). The space complexity is O(N) to store the state array.

@@ -1,0 +1,56 @@
+---
+id: lc-two-sum
+domain: leetcode
+title: 1. Two Sum
+tags: [hash-table]
+difficulty: easy
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/two-sum/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+Iterate through every possible pair with two nested loops and check whether they add up to `target`.
+That is **O(N^2)** — we recompute the same combinations over and over.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+Instead of iterating through every possible combination, we only need to find the required
+**complement** — the difference between the target and the current value (`target - current_value`).
+Once the complement is known, the whole problem reduces to "have I seen this value before?".
+
+### The Strategy: Hash Map (value → index)
+Hash Map lookups take O(1) time. By maintaining a map of `value -> index` and checking whether the
+complement already exists, we bring the overall Time Complexity down to **O(N)**.
+
+### The Precise Calculation / Execution
+In any valid pair, one index is always smaller than the other, so we only need to check the
+**previously visited** numbers. The element with the larger index will naturally "look back" and find
+its match — guaranteeing we never miss a pair in a single pass. Insert each value into the map only
+after checking for its complement.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+
+        unordered_map<int, int> mp;
+
+        int n = nums.size();
+        for (int i = 0; i < n; i++) {
+            int complement = target - nums[i];
+            if (mp.count(complement)) {
+                return {mp[complement], i};
+            }
+            mp[nums[i]] = i;
+        }
+
+        return {-1, -1};
+    }
+};
+```

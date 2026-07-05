@@ -146,6 +146,101 @@ def collect():
     return cards
 
 
+# ---- LeetCode coverage panel (solved overview from site/solved.json) --------
+def build_solved_section() -> str:
+    """Self-contained (CSS+HTML+JS) coverage panel; '' if solved.json is absent."""
+    path = ROOT / "site" / "solved.json"
+    if not path.exists():
+        return ""
+    d = json.loads(path.read_text(encoding="utf-8"))
+    c = d.get("counts", {})
+    user = d.get("username", GITHUB_USER)
+    rows = []
+    for p in d.get("problems", []):
+        diff = p.get("difficulty", "")
+        title = html.escape(p.get("title", ""), quote=True)
+        slug = p.get("slug", "")
+        paid = ' <span class="paid">🔒</span>' if p.get("paid") else ""
+        search = html.escape(f'{title} {p.get("id","")}'.lower(), quote=True)
+        rows.append(
+            f'<tr data-d="{diff}" data-t="{search}">'
+            f'<td class="num">{p.get("id","")}</td>'
+            f'<td><a href="https://leetcode.com/problems/{slug}/" target="_blank" rel="noopener">{title}</a>{paid}</td>'
+            f'<td><span class="pill diff-{diff}">{diff}</span></td></tr>'
+        )
+    rows_html = "\n".join(rows)
+    return f"""
+<style>
+  .coverage {{ padding:8px 0 4px; }}
+  .coverage h2 {{ font-size:1.4rem; margin:0 0 4px; }}
+  .c-easy {{ color:var(--easy); }} .c-medium {{ color:var(--medium); }} .c-hard {{ color:var(--hard); }}
+  details.solved {{ margin:18px 0 0; }}
+  details.solved > summary {{ cursor:pointer; padding:10px 14px; background:var(--card);
+     border:1px solid var(--border); border-radius:10px; font-size:.95rem; user-select:none; }}
+  .solved-controls {{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:14px 0 6px; }}
+  .solved-controls input, .solved-controls select {{ padding:8px 10px; border-radius:9px;
+     border:1px solid var(--border); background:var(--card); color:var(--fg); font-size:.9rem; }}
+  #lc-count {{ color:var(--muted); font-size:.85rem; margin-left:auto; }}
+  .solved-table-wrap {{ max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:10px; }}
+  #lc-table {{ border-collapse:collapse; width:100%; font-size:.9rem; }}
+  #lc-table th {{ position:sticky; top:0; background:var(--bg); text-align:left; padding:8px 12px;
+     border-bottom:1px solid var(--border); font-size:.8rem; color:var(--muted); }}
+  #lc-table td {{ padding:7px 12px; border-bottom:1px solid var(--border); }}
+  #lc-table td.num {{ color:var(--muted); font-variant-numeric:tabular-nums; width:56px; }}
+  #lc-table a {{ text-decoration:none; }} #lc-table a:hover {{ text-decoration:underline; }}
+  .paid {{ font-size:.7rem; }}
+</style>
+<section class="coverage">
+  <h2>LeetCode Coverage</h2>
+  <p class="tag-line"><b>{c.get('total',0)}</b> problems solved on
+     <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">leetcode.com/u/{user}</a>
+     — the write-up cards below are the deep-dive ones. 已解 {c.get('total',0)} 題，下面是精選詳解。</p>
+  <div class="stats">
+    <div class="stat"><b>{c.get('total',0)}</b><span>solved</span></div>
+    <div class="stat"><b class="c-easy">{c.get('easy',0)}</b><span>Easy</span></div>
+    <div class="stat"><b class="c-medium">{c.get('medium',0)}</b><span>Medium</span></div>
+    <div class="stat"><b class="c-hard">{c.get('hard',0)}</b><span>Hard</span></div>
+  </div>
+  <details class="solved">
+    <summary>Show all {c.get('total',0)} solved problems ▸</summary>
+    <div class="solved-controls">
+      <input id="lc-search" type="search" placeholder="search title / number…">
+      <select id="lc-diff">
+        <option value="">All difficulty</option>
+        <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+      </select>
+      <span id="lc-count"></span>
+    </div>
+    <div class="solved-table-wrap">
+      <table id="lc-table">
+        <thead><tr><th>#</th><th>Problem</th><th>Difficulty</th></tr></thead>
+        <tbody>
+{rows_html}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</section>
+<script>
+(function() {{
+  var q = document.getElementById('lc-search'),
+      d = document.getElementById('lc-diff'),
+      cnt = document.getElementById('lc-count'),
+      rows = [].slice.call(document.querySelectorAll('#lc-table tbody tr'));
+  function apply() {{
+    var s = (q.value || '').toLowerCase(), df = d.value, n = 0;
+    rows.forEach(function(r) {{
+      var ok = (!df || r.dataset.d === df) && (!s || r.dataset.t.indexOf(s) >= 0);
+      r.style.display = ok ? '' : 'none'; if (ok) n++;
+    }});
+    cnt.textContent = n + ' / ' + rows.length;
+  }}
+  q.addEventListener('input', apply); d.addEventListener('change', apply); apply();
+}})();
+</script>
+"""
+
+
 # ---- render page ------------------------------------------------------------
 def render(cards):
     data = json.dumps(cards, ensure_ascii=False)
@@ -156,6 +251,7 @@ def render(cards):
     return TEMPLATE.format(
         user=GITHUB_USER, data=data, n_total=len(cards), n_lc=n_lc, n_ai=n_ai,
         avg=avg_mastery, tags_json=json.dumps(all_tags, ensure_ascii=False),
+        solved_section=build_solved_section(),
     )
 
 
@@ -241,6 +337,11 @@ TEMPLATE = r"""<!doctype html>
       <div class="stat"><b>{avg}</b><span>avg mastery /5</span></div>
     </div>
   </header>
+
+  {solved_section}
+
+  <h2 style="font-size:1.4rem; margin:26px 0 0;">Deep-dive write-ups</h2>
+  <p class="tag-line" style="margin:4px 0 0;">Problems I wrote up in full — the reasoning, not just the code.</p>
 
   <div class="controls">
     <select id="domain"><option value="">All domains</option>

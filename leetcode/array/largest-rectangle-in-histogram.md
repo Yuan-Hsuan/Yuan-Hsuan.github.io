@@ -1,0 +1,73 @@
+---
+id: lc-largest-rectangle-in-histogram
+domain: leetcode
+title: 84. Largest Rectangle in Histogram
+tags: [array, stack, monotonic-stack]
+difficulty: hard
+status: review
+mastery: 5
+importance: 5
+optimal: true
+source: https://leetcode.com/problems/largest-rectangle-in-histogram/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The naive solution for this problem would be to check every possible combination of left and right
+boundaries, which gives us an **O(N^2)** time complexity.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+We can optimize by focusing on a key observation: the height of any rectangle is strictly determined
+by the shortest bar inside it. This means as we iterate through the histogram from left to right,
+whenever we encounter a shorter bar, the taller bars before it can no longer be extended to the
+right. For example, if the heights are `[2, 1, 5, 6]`, the moment we hit the `1`, we no longer need
+to look back at the `2` because `1` becomes the new bottleneck.
+
+### The Strategy: Monotonic Increasing Stack
+We use this observation to design an O(N) algorithm with a Monotonic Increasing Stack. Instead of
+constantly looking back, we only keep track of heights in increasing order.
+
+### The Precise Calculation / Execution
+Whenever we encounter a bar that is shorter than the top of our stack, it means we have found the
+**right boundary** for that taller bar. So we pop the taller bar out to calculate its maximum area.
+The **height** of the rectangle is simply the height of the bar we just popped. The **left boundary**
+is the *new* top of our stack — because our stack is strictly increasing, the new top is the first
+bar on the left that is shorter. Therefore the width is the distance between the current index and
+the new top of the stack, minus one. We calculate this area right then and there, update our maximum,
+and discard the popped bar.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    int largestRectangleArea(vector<int>& heights) {
+        stack<int> st;
+        // 創造左邊界
+        st.push(-1);
+        // 避免最後多一個迴圈判斷
+        heights.push_back(0);
+
+        int n = heights.size();
+        int res = 0;
+        for (int i = 0; i < n; i++) {
+
+            while (st.top() != -1 && heights[st.top()] > heights[i]) {
+
+                int height = heights[st.top()];
+                st.pop();
+
+                res = max(res, (i - st.top() - 1) * height);
+            }
+
+            st.push(i);
+        }
+
+        // 恢復原始輸入資料
+        heights.pop_back();
+
+        return res;
+    }
+};
+```

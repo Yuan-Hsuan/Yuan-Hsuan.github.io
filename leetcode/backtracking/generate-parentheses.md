@@ -1,0 +1,45 @@
+---
+id: lc-generate-parentheses
+domain: leetcode
+title: 22. Generate Parentheses
+tags: [backtracking]
+difficulty: medium
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/generate-parentheses/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+A brute-force approach would generate all `2^(2N)` possible bracket strings and validate each one,
+or re-scan the partial string at every step just to count how many brackets are currently open.
+Both waste an enormous amount of work.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+We never need to re-scan the string to know its state. Instead of linearly scanning the string at
+every step to count the brackets — which is highly inefficient — we pass the `open` and `close`
+counts directly as parameters into the recursive function. This lets us track the state in **O(1)**
+time at each node of the decision tree.
+
+### The Strategy: State-Driven Backtracking (狀態驅動的回溯法)
+To generate all combinations efficiently, we build the string character by character with
+backtracking, carrying the running `open` / `close` counts as arguments so the state always travels
+with the recursion. (為了高效率生成所有組合，我們使用回溯法逐字元建立字串，直接將 open 和 close 的數量作為參數傳入遞迴函式，讓我們能在決策樹的每個節點以 O(1) 的時間追蹤狀態。)
+
+### The Precise Calculation / Execution
+The fundamental rule of valid parentheses is that at any prefix, the number of closing brackets can
+never exceed the opening brackets (`open >= close`). This gives two strict branching conditions:
+- Add an opening bracket as long as `open < n`.
+- Add a closing bracket **only** if `open > close`.
+
+This mechanism prunes every invalid path instantly. (合法括號的根本法則是：在任何前綴，右括號的數量絕對不能超過左括號。只要 open < n 就可以加入左括號；而且只有在 open > close 時才能加入右括號，這保證我們能瞬間剪枝掉任何不合法的路徑。)
+
+## 🛠️ Solution
+Because early pruning ensures we only ever generate valid combinations, the time complexity is **not**
+the naive exponential `O(2^(2N))`. Instead it is bounded by the n-th Catalan number, which is
+asymptotically `O(4^n / sqrt(n))`. The space complexity is strictly **O(N)**, since the maximum depth
+of the recursion call stack is exactly `2N` when the string is fully formed.

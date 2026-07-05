@@ -1,0 +1,60 @@
+---
+id: lc-min-stack
+domain: leetcode
+title: 155. Min Stack
+tags: [stack]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: false
+source: https://leetcode.com/problems/min-stack/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+Use a single standard stack. On every `getMin()`, iterate through all elements to find the minimum.
+That makes `getMin` **O(N)**, which violates the problem's strict **O(1)** requirement.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+We only ever push/pop from the top. So a stack has a useful invariant: once a value sits on the
+stack, everything below it never changes while it stays there. That means the "minimum up to this
+depth" is fixed the moment an element is pushed — the current min only changes when a new smaller
+(or equal) value arrives, or when the current min is popped.
+
+### The Strategy: Stack of (Value, Min) Pairs
+Bind each incoming value together with "the minimum up to this depth" into a single pair, and push
+that pair onto the stack. The value and its min state travel together, so they can never fall out
+of sync.
+
+### The Precise Calculation / Execution
+- **push(x):** new min = `min(x, top().second)` (or `x` if empty). Push `(x, new_min)`.
+- **pop():** just pop the top pair — the min state leaves with it automatically.
+- **top():** return `top().first`.
+- **getMin():** return `top().second` — an O(1) read.
+
+## 🛠️ Optimization
+```c++
+class MinStack {
+private:
+    stack<pair<int, int>> st;   // (value, min-up-to-here)
+
+public:
+    MinStack() {}
+
+    void push(int val) {
+        if (st.empty()) st.push({val, val});
+        else            st.push({val, min(val, st.top().second)});
+    }
+    void pop()      { st.pop(); }
+    int  top()      { return st.top().first; }
+    int  getMin()   { return st.top().second; }
+};
+```
+
+## 💡 Follow-up
+**Two stacks (memory-tighter).** If memory matters in production, keep a separate `minStack` and
+push to it only when the incoming value is `<=` the current min. On a mostly-increasing stream this
+saves almost half the space versus storing a min with every element.

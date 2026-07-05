@@ -1,0 +1,73 @@
+---
+id: lc-swap-nodes-in-pairs
+domain: leetcode
+title: 24. Swap Nodes in Pairs
+tags: [linked-list]
+difficulty: medium
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/swap-nodes-in-pairs/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+Both a recursive and an iterative solution reach **O(N)** time. But the recursive version's space
+complexity is the depth of the system call stack — **O(N)**. I prefer the iterative approach for
+better space efficiency.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+By replacing recursion with an iterative `while` loop, we reduce the space complexity from **O(N)**
+(call-stack depth) down to strictly **O(1)**.
+
+### The Strategy: Iterative Walk with a Dummy Node
+Drive a `curr` pointer starting from a dummy node in front of the head, swapping each adjacent pair
+in place as we advance.
+
+### The Precise Calculation / Execution
+The trickiest part is the stopping condition that handles both even- and odd-length lists. We
+strictly check that a valid pair remains (`curr->next && curr->next->next`); on an odd-length list
+the loop safely terminates without touching the final single node, avoiding any null pointer
+exception.
+
+For the pointer manipulation I declare `first` and `second` nodes to avoid confusion, and follow a
+strict wiring order: first link `curr->next` to `second`; then connect `first->next` to the rest of
+the list (`second->next`); finally reverse the internal link by pointing `second->next` back to
+`first`.
+
+## 🛠️ Optimization
+```c++
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* swapPairs(ListNode* head) {
+
+        ListNode dummy(0, head);
+        ListNode* curr = &dummy;
+
+        while (curr->next && curr->next->next) {
+            ListNode* first = curr->next;
+            ListNode* second = curr->next->next;
+
+            curr->next = second;
+            curr = first;
+            curr->next = second->next;
+            second->next = first;
+        }
+
+        return dummy.next;
+    }
+};
+```

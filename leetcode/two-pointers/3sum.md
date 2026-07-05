@@ -1,0 +1,41 @@
+---
+id: lc-3sum
+domain: leetcode
+title: 15. 3Sum
+tags: [two-pointers]
+difficulty: medium
+status: review
+mastery: 5
+importance: 5
+optimal: true
+source: https://leetcode.com/problems/3sum/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+Check every possible triplet by brute force, which takes O(N^3) time.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+**The purpose of sorting: deduplication & monotonicity (排序的雙重目的).** To optimize the O(N^3)
+brute force, our first step is to sort the array. Sorting is essential because **the problem strictly
+constrains that the solution set must not contain duplicate triplets**. Sorting naturally groups
+identical numbers together for easy skipping, and it creates an increasing order that **makes the
+two-pointer technique straightforward to apply**.
+
+### The Strategy: Reduction to 2Sum (降維打擊)
+**Reduction to 2Sum (化簡為 2Sum).** With the array sorted, we iterate through it, fixing each number
+as our "pivot." This reduces the 3Sum problem into a 2Sum problem: we just need to find two numbers
+that sum to the complement of the pivot. We set a `left` pointer immediately to the right of the
+pivot and a `right` pointer at the end of the array, dynamically moving them inwards based on the sum.
+
+### The Precise Calculation / Execution
+**Strict deduplication (嚴格去重).** During this process, because the array is sorted, we actively
+skip adjacent duplicate values to ensure strictly unique triplets.
+
+## 🛠️ Solution
+Sort the array; for each pivot index, run a two-pointer scan (`left` just after the pivot, `right`
+at the end) that shrinks inward toward the pivot's complement, and skip adjacent duplicates at both
+the pivot level and the pointer level. This turns the O(N^3) brute force into an O(N^2) scan while
+guaranteeing unique triplets.

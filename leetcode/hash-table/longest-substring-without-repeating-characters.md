@@ -1,0 +1,63 @@
+---
+id: lc-longest-substring-without-repeating-characters
+domain: leetcode
+title: 3. Longest Substring Without Repeating Characters
+tags: [hash-table, sliding-window]
+difficulty: medium
+status: review
+mastery: 2
+importance: 2
+optimal: false
+source: https://leetcode.com/problems/longest-substring-without-repeating-characters/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+Check every possible substring and test whether it has all-unique characters. Enumerating all
+substrings and validating each is roughly **O(N^2)** (or worse), which repeats a lot of work.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+We continuously expand the window to the right. Once we hit a repeating character, the window reaches
+an **invalid state**. We stop expanding immediately, because any larger substring containing this
+window will be invalid as well.
+*(我們持續向右擴張窗口。一旦遇到重複字元，窗口就進入「無效狀態」。我們必須立刻停止擴張，因為任何包圍這個窗口的更大子字串，本質上也必定無效。)*
+
+### The Strategy: Sliding Window + Left Shrinking
+Instead of resetting our starting point to the next character, the most efficient approach is to keep
+our progress and **shrink the window from the left** until it excludes the duplicate and becomes valid
+again.
+*(與其天真地把起點重置到下一個字元，最有效率的做法是保留進度，並「從左側縮小窗口」。我們將左邊界移動到剛好排除掉重複字元的位置，瞬間恢復窗口的有效性。)*
+
+### The Precise Calculation / Execution
+To optimize the shrinking process, maintain a Hash Map (here a size-128 array) tracking the most
+recent index of each character. When a collision occurs, the left pointer does not step one by one;
+it **jumps directly** to the index right after the duplicate — keeping the time complexity strictly at
+**O(N)**.
+*(為了優化縮小窗口的過程，我們維護一個記錄每個字元最新 index 的 Hash Map。當碰撞發生時，左指標不需要一步步慢慢走，而是「直接跳躍」到重複字元的下一格，確保時間複雜度嚴格維持在 O(N)。)*
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        // 使用 128 大小的陣列取代 Hash Map，並初始化為 -1 (代表 UNSEEN)
+        vector<int> last_seen(128, -1);
+
+        int res = 0;
+        int l = 0;
+        int n = s.length();
+
+        for (int r = 0; r < n; r++) {
+            char c = s[r];
+
+            l = max(l, last_seen[c] + 1);
+
+            res = max(res, r - l + 1);
+            last_seen[c] = r;
+        }
+        return res;
+    }
+};
+```

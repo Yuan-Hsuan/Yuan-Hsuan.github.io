@@ -1,0 +1,40 @@
+---
+id: lc-bus-routes
+domain: leetcode
+title: 815. Bus Routes
+tags: [breadth-first-search]
+difficulty: hard
+status: review
+mastery: 5
+importance: 5
+optimal: false
+source: https://leetcode.com/problems/bus-routes/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The first intuition is to treat the bus stops as nodes. However, since we can travel between any two
+stops on the same route, using bus stops as nodes forces us to connect every stop to every other stop
+on the same route.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+That stops-as-nodes model creates a massive **complete graph**, which is highly inefficient.
+
+### The Strategy: Treat Each Bus Route as a Node
+Instead, I treat **each bus route as a node. Two routes are connected if they share a common bus
+stop.**
+
+### The Precise Calculation / Execution
+To implement this, I first build a hash map mapping each `Stop` to a `List of Routes` to efficiently
+find connecting routes. Then I use a **level-by-level BFS**: I initialize the queue with all routes
+containing the `source` stop. For each route in the queue, I iterate through its stops and use the
+map to find connected, unvisited routes to push into the queue.
+
+## 🛠️ Solution
+**Complexity**
+- Because of that optimization, we visit each stop exactly once. Therefore the **time complexity is
+  strictly O(S)**, where S is the total number of bus stops across all routes.
+- The **space complexity is O(R + S)** — where R is the number of routes and S is the number of
+  stops — used by the hash map and the BFS queue.

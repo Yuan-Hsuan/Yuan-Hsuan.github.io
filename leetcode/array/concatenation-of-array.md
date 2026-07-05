@@ -1,0 +1,104 @@
+---
+id: lc-concatenation-of-array
+domain: leetcode
+title: 1929. Concatenation of Array
+tags: [array, simulation]
+difficulty: easy
+status: review
+mastery: 1
+importance: 1
+optimal: true
+source: https://leetcode.com/problems/concatenation-of-array/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+We want to return the concatenation of the input array with itself. The easiest way is to iterate
+through every value in the input array and `push_back` it onto the original array, then return that.
+
+```c++
+class Solution {
+public:
+    vector<int> getConcatenation(vector<int>& nums) {
+
+        int n = nums.size();
+        for (int i = 0; i < n; i++) {
+            nums.push_back(nums[i]);
+        }
+        return nums;
+    }
+};
+```
+
+The drawback: every `push_back` requires a **capacity check**, and without pre-allocating space it
+triggers multiple **memory reallocations**, costing unnecessary O(N) data copying.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+The instinct is to use `insert` for a single bulk copy instead of many `push_back` calls. But doing
+it in place is a trap: `nums.insert(nums.end(), nums.begin(), nums.end())` reads from `begin()` and
+`end()` while it is also growing `nums`. During the reallocation step those iterators immediately
+become invalid, and reading from invalidated iterators is **Undefined Behavior (UB)**.
+
+### The Strategy: Pre-Allocate, Then Bulk Insert
+Write into a separate destination vector and reserve its full final capacity up front. With space
+guaranteed, the two bulk inserts never reallocate, and each one leverages the underlying `memmove`
+optimization for fast copying.
+
+### The Precise Calculation / Execution
+1. Declare an empty `vector<int> ans;`.
+2. Immediately call `ans.reserve(2 * n);` — this pre-allocates raw memory for exactly `2N` elements,
+   guaranteeing **zero reallocations** later.
+3. Perform the two safe `insert` operations.
+
+This completely eliminates reallocation and value-initialization overhead, achieving the absolute
+fastest **O(N)** time.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    vector<int> getConcatenation(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> ans;
+
+        ans.reserve(2 * n);
+
+        ans.insert(ans.end(), nums.begin(), nums.end());
+        ans.insert(ans.end(), nums.begin(), nums.end());
+
+        return ans;
+    }
+};
+```
+
+## 💡 Follow-up
+**The Self-Insertion Trap.** Inserting into the same vector you read from invalidates `begin()` and
+`end()` on reallocation — Undefined Behavior:
+```c++
+class Solution {
+public:
+    vector<int> getConcatenation(vector<int>& nums) {
+
+        nums.insert(nums.end(), nums.begin(), nums.end());
+        return nums;
+    }
+};
+```
+
+**Safe but Suboptimal (安全的 insert 但有多餘擴容).** Copy into a new vector, then `insert` once. This
+avoids iterator invalidation, but the copy allocates for `N` elements, and the following `insert`
+finds the capacity insufficient — triggering a **second** allocation for `2N` and copying the first
+half over:
+```c++
+class Solution {
+public:
+    vector<int> getConcatenation(vector<int>& nums) {
+        vector<int> ans(nums);
+        ans.insert(ans.end(), nums.begin(), nums.end());
+
+        return ans;
+    }
+};
+```

@@ -1,0 +1,71 @@
+---
+id: lc-pow-x-n
+domain: leetcode
+title: 50. Pow(x, n)
+tags: [math, recursion]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: true
+source: https://leetcode.com/problems/powx-n/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The naive way to calculate `x^n` is multiplying `x` by itself `n` times, which takes **O(N)** time.
+To optimize `x^n` from a linear O(N) loop, we must fundamentally rethink how exponentiation works.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+By looking at the mathematical properties of exponents — specifically `x^(2a) = (x^a)^2` and
+`x^(a+b) = x^a * x^b` — we realize that we don't need to multiply `x` one by one. We can "chunk"
+the multiplications by continually squaring the base and piecing together the required chunks.
+
+### The Strategy: Binary Exponentiation
+This mathematical "chunking" naturally maps to a **binary representation**. Because squaring the
+base repeatedly generates powers of two (`x^1, x^2, x^4, x^8...`), and any integer `n` can be
+decomposed into a sum of binary powers, checking the binary bits of `n` is the perfect way to
+orchestrate these mathematical rules. This synergy physically guarantees an **O(log N)** time
+complexity.
+
+### The Precise Calculation / Execution
+Before executing this mathematical engine, I must address the reality of system limits. The edge
+case of `n = -2147483648` will overflow if directly negated in a 32-bit integer space. To defend
+against this, my first step is casting the exponent to a 64-bit integer, safely isolating the core
+math logic from any potential memory hazards.
+
+Then I walk the bits of `n`: whenever the current bit is set, I fold the current square into the
+result (`res *= x`); every iteration I square the base (`x *= x`) and shift to the next bit
+(`n >>= 1`). Negative exponents are handled up front by inverting the base and flipping `n` positive.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    double binaryExp(double x, long long n) {
+
+        if (n == 0 || x == 1) return 1.0;
+        if (n < 0) {
+            x = 1.0/x;
+            n = -n;
+        }
+
+        double res = 1;
+        while (n > 0) {
+
+            // 在 C++ 中，== 的優先級比 & 還高！所以這行實際上會被編譯器解讀為 n & (1 == 1)，也就是 n & 1。雖然邏輯上歪打正著沒有爛掉，但這是面試官非常忌諱的寫法，正確寫法必須加括號：(n & 1) == 1
+            if (n & 1) {
+                res *= x;
+            }
+            x *= x;
+            // 對「負數」進行位元右移 (n >>= 1) 的行為是依賴編譯器實作的（通常是算術右移，會補 1 以保留符號）。如果你對 -1 進行右移，它會永遠是 -1！
+            n >>= 1;
+        }
+
+        return res;
+    }
+    double myPow(double x, int n) { return binaryExp(x, (long long)n); }
+};
+```

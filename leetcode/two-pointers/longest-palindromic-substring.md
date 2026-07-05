@@ -1,0 +1,88 @@
+---
+id: lc-longest-palindromic-substring
+domain: leetcode
+title: 5. Longest Palindromic Substring
+tags: [two-pointers, dynamic-programming]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: true
+source: https://leetcode.com/problems/longest-palindromic-substring/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The brute-force idea is to expand around every possible center and grow outward while both sides
+match. There are `2N - 1` centers (each character plus each gap), and each expansion can cost up to
+O(N), giving **O(N^2)** time overall.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+Plain "expand around center" throws away work: neighboring centers overlap heavily, yet each one
+re-scans characters that a previous center already proved to be part of a palindrome.
+
+### The Strategy: Manacher's Algorithm
+First transform the string by inserting `#` between every character (and at both ends), so odd- and
+even-length palindromes are handled uniformly. Keep a `radii` array plus the current palindrome's
+`center` and right `boundry`. When a new index `i` falls inside the current boundary, mirror its
+radius from `2 * center - i` and reuse that known value instead of expanding from zero.
+
+### The Precise Calculation / Execution
+- For each `i`, seed `radii[i]` from its mirror if `i < boundry`, capped by `boundry - i`.
+- Expand outward with two pointers (`left`, `right`) while the characters match.
+- If the expansion pushes past the current `boundry`, update `center` and `boundry`.
+- Track `max_center` / `max_length`, then map back to the original string with
+  `s.substr((max_center - max_length) / 2, max_length)`. This yields **O(N)** time.
+
+## 🛠️ Optimization
+```c++
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        string str = "#";
+        for (char c: s) {
+            str += c;
+            str += "#";
+        }
+
+        int n = str.length();
+        vector<int> radii(n, 0);
+        int center = 0;
+        int boundry = 0;
+
+        int max_center = 0;
+        int max_length = 0;
+
+        for (int i = 0; i < n; i++) {
+
+            if (i < boundry) {
+                int mirror = 2 * center - i;
+                radii[i] = min(boundry - i, radii[mirror]);
+            }
+
+            int right = radii[i] + i + 1;
+            int left = -radii[i] + i - 1;
+            while (right < n && left >= 0 && str[right] == str[left]) {
+                right++;
+                left--;
+            }
+
+            right--;
+            radii[i] = right - i;
+            if (right > boundry) {
+                center = i;
+                boundry = right;
+            }
+
+            if (radii[i] > max_length) {
+                max_center = i;
+                max_length = radii[i];
+            }
+        }
+
+        return s.substr((max_center - max_length)/2, max_length);
+    }
+};
+```

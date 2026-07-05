@@ -1,0 +1,43 @@
+---
+id: lc-find-peak-element
+domain: leetcode
+title: 162. Find Peak Element
+tags: [binary-search]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: true
+source: https://leetcode.com/problems/find-peak-element/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The brute-force solution is iterating through the entire input array and finding the global maximum,
+which is **O(N)**. However, the problem only asks for *any* local peak — we are doing far more work
+than the question requires.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+We don't need the global maximum. From "global to local": since only a local peak is required, we
+can afford to discard half of the array at every step instead of scanning all of it.
+
+### The Strategy: Binary Search as Gradient Ascent (化身為梯度上升的二分搜尋)
+Even though the array isn't globally sorted, the local slope gives us a deterministic O(1) decision
+on which half to discard. By always climbing toward the uphill half, we cut the search space in
+half each time, mathematically guaranteeing we reach a peak in strictly **O(log N)** time.
+
+### The Precise Calculation / Execution
+The "Slope" Invariant (無可逃避的斜坡定律): if we land on an uphill slope
+(`nums[mid] < nums[mid+1]`), we are guaranteed to find a peak if we keep moving right — because the
+array must eventually go down. Conversely, if we are on a downhill slope (`nums[mid] > nums[mid+1]`),
+a peak must exist to our left.
+
+## 🛠️ Solution
+Run a standard binary search on the index range. At each `mid`, compare `nums[mid]` with
+`nums[mid+1]`:
+- If `nums[mid] < nums[mid+1]` (uphill), move `left = mid + 1` to chase the rising side.
+- Otherwise (downhill or flat-down), move `right = mid`, keeping `mid` as a peak candidate.
+
+When `left == right`, that index is a peak. Total time **O(log N)**.

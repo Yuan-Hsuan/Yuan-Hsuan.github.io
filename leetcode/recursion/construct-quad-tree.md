@@ -1,0 +1,46 @@
+---
+id: lc-construct-quad-tree
+domain: leetcode
+title: 427. Construct Quad Tree
+tags: [recursion, divide-and-conquer]
+difficulty: medium
+status: review
+mastery: 4
+importance: 4
+optimal: false
+source: https://leetcode.com/problems/construct-quad-tree/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+A top-down construction scans the grid multiple times: at each node it re-checks whether an entire
+sub-grid is uniform before deciding to split. Repeatedly rescanning the same cells is wasteful.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+Instead of scanning the grid multiple times, we want to touch each cell as few times as possible.
+The uniformity check that a top-down approach repeats can be derived once, cheaply, from the
+children we already computed.
+
+### The Strategy: Bottom-Up Recursion (Divide and Conquer)
+Recursively divide the `N by N` grid into four `N/2 by N/2` sub-grids until we hit the base case:
+a `1 by 1` grid. At this base level, the node is guaranteed to be a leaf, so return a new leaf node
+with that cell's value.
+
+### The Precise Calculation / Execution
+The core logic happens **on the way back up the call stack**. When I receive the four child nodes
+from the recursive calls, I check two conditions:
+1. Are all four children leaf nodes?
+2. Do all four children share the exact same value?
+
+If both conditions are met, we optimize the tree by **merging** — discard the four children and
+return a single super-leaf node. Otherwise, return a non-leaf node connecting to these four children.
+
+## 🛠️ Solution
+**Complexity Analysis**
+
+- **Time Complexity is strictly O(N^2)**, because we visit each cell in the grid exactly once to
+  form the base leaves, and the number of merges is bounded by the number of nodes.
+- **Space Complexity is O(log N)**, due to the recursive call stack, as the grid dimensions are
+  halved at each step.

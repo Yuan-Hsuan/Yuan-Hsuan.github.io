@@ -1,0 +1,44 @@
+---
+id: lc-container-with-most-water
+domain: leetcode
+title: 11. Container With Most Water
+tags: [two-pointers, greedy]
+difficulty: medium
+status: review
+mastery: 3
+importance: 3
+optimal: true
+source: https://leetcode.com/problems/container-with-most-water/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+The brute-force approach tries every pair of lines and computes each container's area, taking
+**O(N^2)** time. We can do far better by being smart about which pairs are worth examining.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+Initial Setup: Maximizing Width (初始設定：最大化寬度). Since a wider container provides a larger
+potential area, we initialize two pointers at both ends of the array to maximize the initial width.
+The area is always strictly limited by the height of the shorter line — that shorter line is the
+real bottleneck.
+
+### The Strategy: Two Pointers (Greedy Convergence)
+Start with the widest possible container and walk the two pointers inward. At each step we must
+decide which pointer to move, and we make that choice greedily based on which line currently caps
+the area.
+
+### The Precise Calculation / Execution
+- The Bottleneck: Proving the Invalid State (尋找瓶頸：證明無效狀態). If we try to move the pointer at
+  the taller line, we won't gain any increase in area, since the capacity is strictly limited by the
+  height of the shorter line.
+- The Trade-off: Moving the Shorter Line (權衡：移動較短的木板). Therefore, we must move the shorter
+  line's pointer. Although we trade away a unit of width, we create the potential to find a much
+  taller line that might overcome the reduction in area caused by the width reduction.
+
+## 🛠️ Solution
+Keep `left` and `right` at the two ends and a running `max` area. Each iteration compute
+`min(height[left], height[right]) * (right - left)`, update `max`, then move whichever pointer
+points at the shorter line inward. Continue until the pointers meet — total time **O(N)**, space
+**O(1)**.

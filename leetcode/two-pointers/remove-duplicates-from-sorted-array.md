@@ -1,0 +1,39 @@
+---
+id: lc-remove-duplicates-from-sorted-array
+domain: leetcode
+title: 26. Remove Duplicates from Sorted Array
+tags: [two-pointers]
+difficulty: easy
+status: review
+mastery: 2
+importance: 2
+optimal: true
+source: https://leetcode.com/problems/remove-duplicates-from-sorted-array/
+visibility: public
+---
+
+## 🎙️ Naive Solution
+A naive solution would call the built-in `erase` function whenever we see a duplicate. However, a
+**deletion** in a C++ vector is **O(N)**. Doing that inside a loop results in an **O(N^2)** solution,
+which is not optimal.
+
+## 🚀 Pitch
+
+### The Bottleneck Observation
+The key is that the problem allows us to ignore the remaining elements past the returned length.
+This means instead of physically deleting elements, we can simply **overwrite** the duplicates with
+unique elements.
+
+### The Strategy: Two Pointers
+Use a **scan pointer** to iterate through the entire vector, and a **write pointer** that points to
+the exact position where the next unique element should be written.
+
+### The Precise Calculation / Execution
+As we iterate, whenever the scan pointer finds a new unique element, we overwrite the value at the
+write pointer with it and then increment the write pointer. This processes the array in a single
+pass.
+
+## 🛠️ Solution
+The two-pointer overwrite runs in **O(N)** time with **O(1)** extra space: one scan of the array,
+constant-time writes, and no allocations. The write pointer's final value is the length of the
+deduplicated portion.
