@@ -51,27 +51,46 @@ CURATED = [
 ]
 
 # ---- experience (section 02 — web-native résumé, DESIGN.md §6) ----------------
+# Source of truth: mind/resume/resume.md (private). Public version: no contact info,
+# bullets condensed to action + constraint + bold result.
 EXPERIENCE = [
-    dict(when="2025 — 2026 · 7 mo", org="NVIDIA",
-         role="Software Intern — AI debugging engine",
+    dict(when="2026 — now", org="Currently",
+         role="Independent study — AI infrastructure",
          bullets=[
-            'Built an AI layer for Android <b>CTS failure triage</b>: a coarse-to-fine '
-            'pipeline that routes each failure to the owning module and points at the '
-            'suspect code block.',
-            '<b>No training cluster, one consumer GPU</b> — an AST engine pre-filters the '
-            'LLM’s context to a fraction of the tokens. <span class="xp-hook">'
-            '“I couldn’t scale the hardware, so I shrank the problem.”</span>',
+            'Working through <b>Stanford CS224n</b> by hand — embeddings → Transformers, '
+            '<b>minBERT in progress</b>. This site’s AI notes are the by-product.',
+            'Digging into <b>agentic workflows and evals</b> — LangGraph-style state '
+            'machines, DSPy, automated evaluation — extending the adoption lesson from '
+            'the NVIDIA engine.']),
+    dict(when="May — Nov 2025 · Taipei", org="NVIDIA",
+         role="Software Engineering Intern — AI diagnostic agent",
+         bullets=[
+            'Architected an AI diagnostic agent for system-level bug analysis: a Python '
+            '<b>AST parsing engine</b> statically extracts control-flow features to sharpen '
+            'the LLM’s context. <span class="xp-hook">“I couldn’t scale the hardware, '
+            'so I shrank the problem.”</span>',
+            'Built the <b>RAG pipeline</b> (LangChain + vector DB) and a Python backend with '
+            'REST APIs wired into NVIDIA’s internal bug-tracking system, plus a diagnostic '
+            'dashboard that visualizes the analysis.',
             '<b>~80% of routine triage automated</b>; adopted as a permanent asset.']),
-    dict(when="2020 — 2023 · 3 yrs", org="Broadcom",
-         role="System Software Engineer",
+    dict(when="Jun — Aug 2024 · Hsinchu", org="Silicon Motion",
+         role="Verification Engineer Intern",
          bullets=[
-            'Turned highly manual <b>network/hardware validation</b> into end-to-end '
-            '<b>automated pipelines</b> — the systems habits the NVIDIA work was built on.']),
-    dict(when="2024 — 2026", org="University of Southern California",
-         role="M.S. Computer Science",
+            'Cut manual test setup and intervention by <b>43%</b> with a full-stack '
+            'device-management platform (React + Node.js) — engineers power-cycle test '
+            'chips remotely from a web interface.']),
+    dict(when="Mar 2021 — Dec 2023", org="Broadcom",
+         role="Software Engineer",
          bullets=[
-            'Alongside coursework: <b>Stanford CS224n self-study</b> (this site’s AI '
-            'notes) and a steady algorithms practice log.']),
+            'Led an automation suite that modulates chip voltage from real-time thermal '
+            'and network data — <b>27% better power efficiency</b>.',
+            'Automated IC programming (Python + Bash, Linux) with hardened firmware-'
+            'deployment security — <b>45% less manual programming time</b>.']),
+    dict(when="2018 — 2025", org="USC · NYCU",
+         role="M.S. Computer Science (USC) · B.S. ECE, minor CS (NYCU)",
+         bullets=[
+            'Undergrad EDA-lab research: <b>ILP/SAT models for 7-nm FinFET layout</b> '
+            '(−25.1% filler cells) and IAGM maze routing (−49% M2 usage).']),
 ]
 
 # ---- external AI notes (single source of truth: the CS224n study repo) -------
@@ -396,8 +415,8 @@ def hero_html(cards, solved):
     <div class="hero2-left">
       <p class="kicker rv" style="--d:0s"><span>Yuan-Hsuan Wen</span><span aria-hidden="true">·</span><span id="typed"></span><span class="cursor" aria-hidden="true"></span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
       <h1 class="rv" style="--d:.15s">The <em>reasoning</em>, not just the code.</h1>
-      <p class="hero-sub rv" style="--d:.3s">A systems engineer moving into AI infrastructure —
-      logging the practice honestly: the trade-offs and the mistakes, not just accepted submissions.</p>
+      <p class="hero-sub rv" style="--d:.3s">Systems engineer, moving into AI infrastructure.
+      The practice, logged honestly — mistakes included.</p>
       <div class="stats rv" style="--d:.45s">
         <div class="sgroup">
           <div class="sl">AI / CS224n</div>
@@ -421,9 +440,9 @@ def hero_html(cards, solved):
         <a class="btn" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
       </div>
     </div>
-    <div class="hero2-right">
+    <div class="hero2-right hud">
       <canvas id="kg" aria-label="Knowledge graph of write-ups and topics"></canvas>
-      <div class="kg-hint">click to fan out · drag</div>
+      <div class="kg-hint" id="kg-hud">drag to rotate · click a dot</div>
       <aside class="kg-panel" id="kg-panel"></aside>
     </div>
     <div class="cue" aria-hidden="true">↓</div>
@@ -439,7 +458,7 @@ def start_here_html(cards):
             continue
         tags = " · ".join(c["tags"][:2])
         items.append(
-            f'<a class="card2 rv" style="--d:{i*0.1:.1f}s" href="#card-{esc(c["id"])}" '
+            f'<a class="cardk rv" style="--d:{i*0.1:.1f}s" href="#card-{esc(c["id"])}" '
             f'onclick="expandCard(\'{esc(c["id"])}\');return false;">'
             f'<div class="meta">{esc(pick["meta"])}</div>'
             f'<h3>{esc(c["title"])}</h3>'
@@ -447,12 +466,13 @@ def start_here_html(cards):
             f'<div class="foot"><span>{esc(tags)}</span><span class="go">Read</span></div></a>')
     if not items:
         return ""
-    return ('\n  <section class="band" id="start">\n    <div class="wrap">\n'
+    return ('\n  <section class="band" id="start">\n    <div class="wrap wide split start-split">\n'
+            '      <div class="startcards">' + "".join(items) + '</div>\n'
             '      <div class="sec-head rv">\n'
-            '        <p class="kicker"><span class="idx">01</span><span>Start here</span></p>\n'
+            '        <p class="kicker"><span class="idx">01</span><span class="dec">Start here</span></p>\n'
             '        <h2>Three write-ups that show how I think.</h2>\n'
-            '        <p>Hand-picked, not sorted by recency. If you only have ten minutes, read these.</p>\n'
-            '      </div>\n      <div class="cards2">' + "".join(items) + '</div>\n'
+            '        <p>Hand-picked. Ten minutes, three reads.</p>\n'
+            '      </div>\n'
             '    </div>\n  </section>')
 
 
@@ -471,7 +491,7 @@ def experience_html():
     <div class="xp-stage">
       <div class="wrap wide xp-grid">
         <div class="xp-left">
-          <p class="kicker"><span class="idx">02</span><span>Experience</span></p>
+          <p class="kicker"><span class="idx">02</span><span class="dec">Experience</span></p>
           <h2>Systems engineer,<br>moving into AI infrastructure.</h2>
           <p class="pitch">“I don’t want to train the models — I want to build the
           engine that makes them fast and reliable.”</p>
@@ -497,12 +517,12 @@ def activity_html(contrib):
   <section class="band" id="activity">
     <div class="wrap wide split">
       <div class="sec-head rv">
-        <p class="kicker"><span class="idx">03</span><span>Activity</span></p>
+        <p class="kicker"><span class="idx">03</span><span class="dec">Activity</span></p>
         <h2>Showing up, in public.</h2>
         <p>Every gold square is a commit to this log or its notes — pulled from GitHub at build time.</p>
         <p class="gh-note">Started logging publicly in spring 2026 — the streak is young on purpose.</p>
       </div>
-      <div class="gh rv">
+      <div class="gh rv hud">
         <div class="gh-head">
           <a class="gh-title" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">github.com/{GITHUB_USER}</a>
           <span class="gh-title">Last {CONTRIB_WEEKS} weeks</span>
@@ -519,52 +539,112 @@ def activity_html(contrib):
   </section>"""
 
 
-# The code window shows the REAL safety-belt lines from collect() above — if that
-# code changes, update this snippet (they are asserted to stay in sync in main()).
-SYSTEM_SECTION = """
+# ---- the system (section 04): a working mini-editor over REAL project files ----
+# Every pane is read from the actual repo at build time — nothing is hand-typed,
+# so the editor can never drift from the code it shows.
+_PY_KW = re.compile(r"\b(def|return|for|in|if|elif|else|while|continue|break|import|"
+                    r"from|class|with|as|not|and|or|lambda|yield|None|True|False)\b")
+
+def _hl_py(s: str) -> str:
+    s = html.escape(s, quote=False)
+    if "#" in s:
+        head, _, tail = s.partition("#")
+        return _hl_py_code(head) + '<i class="c">#' + tail + "</i>"
+    return _hl_py_code(s)
+
+def _hl_py_code(s: str) -> str:
+    s = re.sub(r'("[^"]*")', r'<i class="s">\1</i>', s)
+    s = _PY_KW.sub(r'<i class="k">\1</i>', s)
+    return s
+
+def _hl_md(s: str) -> str:
+    s = html.escape(s, quote=False)
+    if s.strip() == "---":
+        return f'<i class="c">{s}</i>'
+    if s.startswith("#"):
+        return f'<i class="k">{s}</i>'
+    return re.sub(r"^(\s*)([\w-]+)(:)", r'\1<i class="f">\2</i>\3', s)
+
+def _hl_html(s: str) -> str:
+    s = html.escape(s, quote=False)
+    return re.sub(r"(&lt;/?[a-zA-Z!][^&]*?&gt;)", r'<i class="k">\1</i>', s)
+
+def _pane(key: str, lines: list, start: int, hl) -> str:
+    out = []
+    for j, raw in enumerate(lines):
+        cur = '<span class="cursor" aria-hidden="true"></span>' if j == len(lines) - 1 else ""
+        out.append(f'<span class="ln" style="--d:{0.05 + j*0.06:.2f}s">'
+                   f'<span class="no">{start + j}</span>{hl(raw.rstrip())}{cur}</span>')
+    hidden = "" if key == "build" else " hidden"
+    return f'<div class="code" data-pane="{key}"{hidden}><pre>{"".join(out)}</pre></div>'
+
+
+def _file_lines(path: Path, start: int, count: int):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return lines[start - 1:start - 1 + count]
+
+
+def system_html():
+    panes, tabs = [], []
+
+    def add(key, label, path_label, path=None, lines=None, start=1, hl=_hl_md, note=""):
+        if path is not None:
+            if not path.exists():
+                return
+            lines = _file_lines(path, start, 12)
+        tabs.append((key, label, path_label, note))
+        panes.append(_pane(key, lines, start, hl))
+
+    note_path = ROOT / "leetcode" / "two-pointers" / "3sum.md"
+    add("note", "leetcode/…/3sum.md", "leetcode/two-pointers/3sum.md — a write-up's source",
+        path=note_path, hl=_hl_md)
+    add("schema", "SCHEMA.md", "SCHEMA.md — the metadata contract both repos share",
+        path=ROOT / "SCHEMA.md", hl=_hl_md)
+    src = Path(__file__).read_text(encoding="utf-8").splitlines()
+    belt = next((i for i, l in enumerate(src) if "SAFETY BELT" in l and "if meta" in l), None)
+    if belt is not None:
+        start = belt - 7
+        add("build", "site/build.py ●", "site/build.py — this generator, reading itself",
+            lines=src[start:start + 12], start=start + 1, hl=_hl_py)
+    add("out", "index.html", "index.html — the generated output GitHub Pages serves",
+        lines=HEAD.splitlines()[:12], start=1, hl=_hl_html, note="← output")
+
+    tree_rows = []
+    for i, (k, lbl, pl, n) in enumerate(tabs):
+        sel = " sel" if k == "build" else ""
+        pre = "└" if i == len(tabs) - 1 else "├"
+        extra = ' <i class="lock">' + esc(n) + "</i>" if n else ""
+        tree_rows.append(
+            f'<button class="titem{sel}" data-pane="{k}" data-name="{esc(pl)}" role="tab" '
+            f'aria-selected="{"true" if sel else "false"}">{pre} {esc(lbl)}{extra}</button>')
+    tree = "".join(tree_rows)
+
+    default_name = next((pl for k, lbl, pl, n in tabs if k == "build"), tabs[0][2] if tabs else "")
+    return f"""
   <section class="band dark" id="sys">
-    <div class="wrap">
+    <div class="wrap wide">
       <div class="sec-head rv">
-        <p class="kicker"><span class="idx">04</span><span>The system</span></p>
+        <p class="kicker"><span class="idx">04</span><span class="dec">The system</span></p>
         <h2>This site is itself a project.</h2>
-        <p>No framework, no build dependencies — one Python script turns a private second-brain
-        repo into this page. This is the actual code that keeps private notes private.</p>
+        <p>One Python script, zero dependencies. Every file below is read live from the repo — click around.</p>
       </div>
-      <div class="frame rv">
+      <div class="frame rv hud">
         <div class="win" id="win">
           <div class="win-bar">
             <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-            <span class="fname">site/build.py — dependency-free static site generator</span>
+            <span class="fname" id="win-fname">{esc(default_name)}</span>
           </div>
           <div class="win-body">
-            <div class="tree" aria-hidden="true">
-<b>~/github</b>
-├ mind/               <span class="lock">🔒 private</span>
-│ ├ resume/
-│ ├ bq/ · system-design/
-│ └ cli/  <span class="lock">spaced repetition</span>
-└ <b>Yuan-Hsuan.github.io/</b>
-  ├ leetcode/*.md
-  ├ ai-knowledge/*.md
-  ├ <span class="sel"> site/build.py ●</span>
-  └ index.html  <span class="lock">← output</span>
+            <div class="tree" role="tablist" aria-label="Project files">
+              <div class="troot">Yuan-Hsuan.github.io/</div>
+              {tree}
             </div>
-            <div class="code"><pre>
-<span class="ln" style="--d:.05s"><span class="no"></span><span class="c"># the safety belt: private notes can never render</span></span>
-<span class="ln" style="--d:.15s"><span class="no"></span><span class="k">def</span> <span class="f">collect</span>():</span>
-<span class="ln" style="--d:.25s"><span class="no"></span>    cards = []</span>
-<span class="ln" style="--d:.35s"><span class="no"></span>    <span class="k">for</span> path <span class="k">in</span> <span class="f">sorted</span>((ROOT / d).rglob(<span class="s">"*.md"</span>)):</span>
-<span class="ln" style="--d:.45s"><span class="no"></span>        meta, body = parse_frontmatter(path.read_text())</span>
-<span class="ln" style="--d:.55s"><span class="no"></span>        <span class="hl"><span class="k">if</span> meta.get(<span class="s">"visibility"</span>) != <span class="s">"public"</span>:</span></span>
-<span class="ln" style="--d:.65s"><span class="no"></span>            <span class="hl"><span class="k">continue</span>  <span class="c"># ← everything else stays private</span></span></span>
-<span class="ln" style="--d:.75s"><span class="no"></span>        cards.append(…)</span>
-<span class="ln" style="--d:.85s"><span class="no"></span>    <span class="k">return</span> cards<span class="cursor" aria-hidden="true"></span></span>
-</pre></div>
+            {"".join(panes)}
           </div>
         </div>
       </div>
       <p class="win-cap rv">Markdown in → one Python script (stdlib only) → static HTML out.
-      No backend, cookieless analytics. The Notion “Coding Report” pipeline feeds leetcode/*.md.</p>
+      No backend, cookieless analytics. Only <code>visibility: public</code> files ever render.</p>
     </div>
   </section>"""
 
@@ -582,9 +662,9 @@ def ai_notes_html(cards):
             f'<span class="d">cs224n · mastery {c["mastery"]}/5</span></a>')
     return ('\n  <section class="band" id="ai">\n    <div class="wrap wide split">\n'
             '      <div class="sec-head rv">\n'
-            '        <p class="kicker"><span class="idx">05</span><span>AI notes</span></p>\n'
+            '        <p class="kicker"><span class="idx">05</span><span class="dec">AI notes</span></p>\n'
             '        <h2>Stanford CS224n, worked through by hand.</h2>\n'
-            '        <p>Concept notes written after doing the math and the PyTorch myself — not summaries of slides.</p>\n'
+            '        <p>Written after doing the math and the PyTorch — not slide summaries.</p>\n'
             '      </div>\n      <div class="rows">' + "".join(rows) + '</div>\n'
             '    </div>\n  </section>')
 
@@ -610,10 +690,9 @@ def log_html(cards, solved):
     <div class="wrap wide">
       <div class="split loghead">
         <div class="sec-head rv">
-          <p class="kicker"><span class="idx">06</span><span>Practice log</span></p>
+          <p class="kicker"><span class="idx">06</span><span class="dec">Practice log</span></p>
           <h2>The daily reps.</h2>
-          <p>{total} solved is just volume — the {n_lc} write-ups are the point: pattern, trade-offs,
-          and a recall prompt for spaced repetition. Click a card to read.</p>
+          <p>{total} solved is volume; the {n_lc} write-ups are the point. Click a card to read.</p>
         </div>
         <div class="rv">
           <div class="lc-inline"><span><b>{total}</b> solved</span><span><b>{n_lc}</b> write-ups</span>
@@ -661,6 +740,7 @@ FOOTER = f"""
     </div>
   </footer>
 
+  <div class="progress" aria-hidden="true"><i id="prog"></i></div>
   <nav class="floatnav" id="floatnav" aria-label="Sections">
     <a href="#top" data-sec="top">Graph</a>
     <a href="#start" data-sec="start">Start</a>
@@ -683,7 +763,7 @@ def page(cards, graph, solved, contrib):
            + start_here_html(cards)
            + experience_html()
            + activity_html(contrib)
-           + SYSTEM_SECTION
+           + system_html()
            + ai_notes_html(cards)
            + log_html(cards, solved)
            + FOOTER + "\n" + data + "\n" + SCRIPT + "\n</body>\n</html>")
@@ -830,7 +910,9 @@ h1,h2,h3{text-wrap:balance}
 .band.dark .btn.primary:hover{background:var(--gold);border-color:var(--gold)}
 .hero2-right{flex:1 1 53%;align-self:stretch;position:relative;overflow:hidden;background:var(--panel)}
 .hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
-.kg-hint{position:absolute;right:14px;bottom:12px;font-size:.74rem;color:#8a8a8a;pointer-events:none}
+.kg-hint{position:absolute;right:14px;bottom:12px;font-family:var(--mono);font-size:.62rem;
+  letter-spacing:.08em;text-transform:uppercase;color:#8a8a8a;pointer-events:none;
+  font-variant-numeric:tabular-nums}
 .kg-panel{position:absolute;right:0;top:0;bottom:0;width:min(320px,78%);background:#f5f1e8;
   border-left:1px solid #e3ddd0;transform:translateX(101%);transition:transform .28s var(--ease);
   overflow:auto;padding:18px 18px 24px;color:#232323}
@@ -862,28 +944,32 @@ h1,h2,h3{text-wrap:balance}
 /* ---- section heads ---- */
 .sec-head{margin:0 0 2.2rem}
 .sec-head h2, .band h2{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
-  font-size:clamp(1.6rem,2.7vw,2.2rem);letter-spacing:-.005em;line-height:1.2;margin:.5rem 0 0}
+  font-size:clamp(1.7rem,3vw,2.5rem);letter-spacing:-.008em;line-height:1.15;margin:.5rem 0 0}
 .sec-head p{margin:.5rem 0 0;color:var(--muted);max-width:44rem}
 
-/* ---- start-here cards ---- */
-.cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-.card2{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:1.4rem 1.4rem 1.2rem;display:flex;flex-direction:column;gap:.7rem;
-  text-decoration:none;color:var(--fg);transition:border-color .15s}
-.card2:hover{text-decoration:none;border-color:var(--gold)}
-.card2 .meta{font-family:var(--mono);font-size:.65rem;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--muted)}
-.card2 h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.18rem;line-height:1.3}
-.card2 .why{color:var(--muted);font-size:.92rem;margin:0;flex:1}
-.card2 .foot{font-family:var(--mono);font-size:.7rem;color:var(--muted);
-  display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.7rem}
-.card2 .foot .go{color:var(--fg)}
-.card2 .foot .go::after{content:"→";display:inline-block;margin-left:.35em;
+/* ---- start-here: black article blocks (left) + head (right) ---- */
+.start-split{grid-template-columns:1.35fr 1fr;align-items:center}
+.startcards{display:flex;flex-direction:column;gap:12px}
+.cardk{background:var(--panel);border:1px solid #3a3835;border-radius:14px;
+  padding:1.3rem 1.4rem 1.1rem;display:flex;flex-direction:column;gap:.55rem;
+  text-decoration:none;color:#f1eee7;transition:border-color .15s,transform .15s,box-shadow .15s}
+.cardk:hover{text-decoration:none;border-color:var(--gold);transform:translateY(-2px);
+  box-shadow:0 10px 28px rgba(35,35,35,.18)}
+.cardk:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
+.cardk .meta{font-family:var(--mono);font-size:.65rem;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--gold)}
+.cardk h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.18rem;line-height:1.3;color:#f1eee7}
+.cardk .why{color:#a8a49c;font-size:.9rem;margin:0}
+.cardk .foot{font-family:var(--mono);font-size:.7rem;color:#8f8b84;
+  display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.1);padding-top:.65rem}
+.cardk .foot .go{color:#f1eee7}
+.cardk .foot .go::after{content:"→";display:inline-block;margin-left:.35em;
   transition:transform .15s var(--ease)}
-@media(hover:hover){ .card2:hover .foot .go::after{transform:translateX(4px)} }
+@media(hover:hover){ .cardk:hover .foot .go::after{transform:translateX(4px)} }
+@media(max-width:860px){ .start-split .sec-head{order:-1} }
 
 /* ---- experience: pinned scrollytelling on black ---- */
-.xp-pin{height:320vh;position:relative;padding-block:0}
+.xp-pin{height:380vh;position:relative;padding-block:0}
 .xp-stage{position:sticky;top:0;min-height:100svh;display:flex;align-items:center}
 .xp-grid{display:grid;grid-template-columns:minmax(280px,1fr) 1.25fr;
   gap:clamp(2rem,5vw,5rem);align-items:center;width:100%;padding-block:clamp(3rem,6vh,5rem)}
@@ -894,20 +980,20 @@ h1,h2,h3{text-wrap:balance}
 .xp-right{position:relative;padding-left:2rem}
 .rail{position:absolute;left:0;top:6px;bottom:6px;width:2px;background:rgba(255,255,255,.14)}
 .rail i{position:absolute;left:0;top:0;width:100%;height:0%;background:var(--gold)}
-.xp-item{padding:1.3rem 0;opacity:.15;transform:translateY(26px);
+.xp-item{padding:1rem 0;opacity:.15;transform:translateY(26px);
   transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .xp-item.on{opacity:1;transform:none}
 .xp-item + .xp-item{border-top:1px solid rgba(255,255,255,.1)}
 .xp-when{font-family:var(--mono);font-size:.68rem;letter-spacing:.07em;
   text-transform:uppercase;color:var(--gold)}
-.xp-item h3{font-family:var(--serif);font-weight:600;margin:.3rem 0 0;font-size:1.35rem}
-.xp-role{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--muted);margin:.2rem 0 .5rem}
-.xp-item ul{margin:.2rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.95rem}
-.xp-item li{margin:.3rem 0}
+.xp-item h3{font-family:var(--serif);font-weight:600;margin:.25rem 0 0;font-size:1.25rem}
+.xp-role{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:.15rem 0 .4rem}
+.xp-item ul{margin:.15rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.92rem;line-height:1.55}
+.xp-item li{margin:.25rem 0}
 .xp-item li b{color:var(--fg);font-weight:600}
 .xp-hook{font-family:var(--serif);font-style:italic;color:var(--gold)}
-@media(max-width:900px){
+@media(max-width:900px),(max-height:600px){
   .xp-pin{height:auto;padding-block:clamp(4rem,9vw,8.5rem)}
   .xp-stage{position:static;display:block;min-height:0}
   .xp-grid{display:block;padding-block:0}
@@ -925,21 +1011,29 @@ h1,h2,h3{text-wrap:balance}
 .win-bar .dots{display:flex;gap:7px}
 .win-bar .dots i{width:11px;height:11px;border-radius:50%;background:#4a463f}
 .win-bar .fname{font-family:var(--mono);font-size:.72rem;color:#a8a49c;letter-spacing:.04em}
-.win-body{display:grid;grid-template-columns:230px 1fr}
-.tree{border-right:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.1rem 1rem;
-  font-family:var(--mono);font-size:.74rem;line-height:2;color:#8f8b84;white-space:pre;overflow-x:auto}
-.tree b{color:#f1eee7;font-weight:400}
-.tree .lock{color:var(--gold)}
-.tree .sel{background:#2f2c27;display:inline-block;width:100%;color:#f1eee7}
+.win-body{display:grid;grid-template-columns:290px 1fr;min-height:340px}
+.tree{border-right:1px solid rgba(255,255,255,.08);padding:1rem 0;
+  font-family:var(--mono);font-size:.76rem;color:#8f8b84;display:flex;flex-direction:column}
+.tree .troot{color:#f1eee7;padding:.35rem 1.1rem}
+.tree .lock{color:var(--gold);font-style:normal}
+.titem{display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  font:inherit;color:#8f8b84;padding:.35rem 1.1rem;white-space:nowrap;
+  transition:color .15s,background .15s}
+.titem:hover{color:#f1eee7}
+.titem.sel{background:#2f2c27;color:#f1eee7}
+.titem:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--gold)}
 .code{padding:1.1rem 1.3rem;overflow-x:auto}
 .code pre{margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.85;color:#c9c5bd}
 .ln{display:block;opacity:0;transform:translateX(8px);
   transition:opacity .45s var(--ease),transform .45s var(--ease);transition-delay:var(--d,0s)}
-.win.in .ln{opacity:1;transform:none}
-.ln .no{display:inline-block;width:1.4em;color:#565248;user-select:none}
+.code.in .ln{opacity:1;transform:none}
+.ln .no{display:inline-block;min-width:2.4em;color:#565248;user-select:none;
+  font-variant-numeric:tabular-nums}
 .k{color:var(--gold)} .s{color:#a8b78c} .c{color:#79746a;font-style:italic}
 .f{color:#e8d5b5} .hl{background:#33302a;border-radius:3px;padding:0 .2em}
-@media(max-width:760px){ .win-body{grid-template-columns:1fr} .tree{display:none} }
+@media(max-width:760px){ .win-body{grid-template-columns:1fr;min-height:0} .tree{flex-direction:row;
+  flex-wrap:wrap;border-right:none;border-bottom:1px solid rgba(255,255,255,.08);padding:.5rem}
+  .tree .troot{display:none} .titem{width:auto;border-radius:6px} }
 @media (prefers-reduced-motion:reduce){ .ln{opacity:1;transform:none;transition:none} }
 .win-cap{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin:1rem 0 0}
 
@@ -999,12 +1093,13 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
   background:var(--surface);color:var(--fg);font-size:1rem;font-family:inherit}
 .controls .count{color:var(--muted);font-size:.82rem;margin-left:auto;font-variant-numeric:tabular-nums}
 .tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;
   padding:1.1rem 1.2rem 1rem;display:flex;flex-direction:column;gap:.6rem;cursor:pointer;
-  user-select:none;transition:border-color .15s;animation:tileIn .45s var(--ease) both;
-  animation-delay:var(--d,0s)}
+  user-select:none;transition:border-color .15s,transform .15s,box-shadow .15s;
+  animation:tileIn .45s var(--ease) both;animation-delay:var(--d,0s)}
 @keyframes tileIn{from{opacity:0;transform:translateY(10px)}}
-.tile:hover{border-color:var(--gold)}
+.tile:hover{border-color:var(--gold);transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(35,35,35,.07)}
 .tile:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
 .tile .t-top{display:flex;gap:6px;flex-wrap:wrap}
 .tile h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.05rem;line-height:1.35;flex:1}
@@ -1073,6 +1168,25 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
 .floatnav a:hover{color:#232323;text-decoration:none}
 .floatnav a.active{background:#232323;color:#f1eee7}
 @media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem} }
+
+/* ---- digital instrument layer (數位感): dot grid, HUD corners, scan, decode ---- */
+body{background-image:radial-gradient(color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px);
+  background-size:26px 26px}
+.band.dark{background-image:radial-gradient(rgba(241,238,231,.05) 1px,transparent 1px);
+  background-size:26px 26px}
+.progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:70;pointer-events:none}
+.progress i{display:block;height:100%;background:var(--gold);transform-origin:left;transform:scaleX(0)}
+.hud{position:relative}
+.hud::before,.hud::after{content:"";position:absolute;width:14px;height:14px;
+  pointer-events:none;opacity:.65;z-index:2}
+.hud::before{top:9px;left:9px;border-top:1.5px solid var(--gold);border-left:1.5px solid var(--gold)}
+.hud::after{bottom:9px;right:9px;border-bottom:1.5px solid var(--gold);border-right:1.5px solid var(--gold)}
+.win{position:relative}
+.win::after{content:"";position:absolute;left:0;right:0;top:-15%;height:44px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--gold) 9%,transparent),transparent);
+  animation:scan 7s linear infinite}
+@keyframes scan{from{top:-12%} to{top:112%}}
+@media (prefers-reduced-motion:reduce){ .win::after{animation:none;display:none} }
 </style>
 </head>"""
 
@@ -1085,7 +1199,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ---- floating tab nav: highlight the section in view ---- */
 (function(){
   const nav=$('floatnav'); if(!nav) return;
-  const links=[].slice.call(nav.querySelectorAll('a'));
+  const links=[].slice.call(nav.querySelectorAll('a[data-sec]'));
   const secs=links.map(a=>$(a.dataset.sec)).filter(Boolean);
   const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){
     links.forEach(a=>a.classList.toggle('active',a.dataset.sec===e.target.id)); } }); },
@@ -1095,13 +1209,49 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---- motion system: typewriter, reveals, odometers, scrolly, gh grid ---- */
 (function(){
-  /* typewriter kicker */
+  /* typewriter kicker — the original looping mode: type → hold → delete → next */
   const typed=$('typed');
   if(typed){
-    const phrase='LEARNING IN PUBLIC';
-    if(REDUCED){ typed.textContent=phrase; }
-    else{ let i=0; (function tick(){ typed.textContent=phrase.slice(0,i++);
-      if(i<=phrase.length) setTimeout(tick,55); })(); }
+    const WORDS=['LEARNING IN PUBLIC','ALGORITHMS, REASONED','NLP FROM SCRATCH','SYSTEMS → AI INFRA'];
+    if(REDUCED){ typed.textContent=WORDS[0]; }
+    else{
+      let wi=0,ci=0,del=false;
+      (function tick(){
+        const w=WORDS[wi%WORDS.length];
+        if(!del){ ci++; typed.textContent=w.slice(0,ci);
+          if(ci>=w.length){ del=true; setTimeout(tick,1600); return; } }
+        else{ ci--; typed.textContent=w.slice(0,ci);
+          if(ci<=0){ del=false; wi++; } }
+        setTimeout(tick,del?38:70);
+      })();
+    }
+  }
+
+  /* scroll progress meter */
+  const prog=$('prog');
+  if(prog){
+    let raf=false;
+    function up(){ raf=false; const h=document.documentElement;
+      const p=h.scrollTop/Math.max(1,h.scrollHeight-h.clientHeight);
+      prog.style.transform='scaleX('+p+')'; }
+    addEventListener('scroll',()=>{ if(!raf){raf=true;requestAnimationFrame(up);} },{passive:true});
+    up();
+  }
+
+  /* kicker decode-in (digital layer) */
+  const GLYPHS='█▓▒░<>/=+*#01';
+  function decode(el){
+    const orig=el.dataset.txt||el.textContent; el.dataset.txt=orig;
+    if(REDUCED){ el.textContent=orig; return; }
+    let f=0; const total=orig.length+5;
+    (function step(){
+      const done=Math.floor((f/total)*orig.length);
+      let s=orig.slice(0,done);
+      for(let i=done;i<orig.length;i++)
+        s+= orig[i]===' '?' ':GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
+      el.textContent=s;
+      if(++f<=total) setTimeout(step,32); else el.textContent=orig;
+    })();
   }
 
   /* odometer count-up */
@@ -1124,18 +1274,39 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const io=new IntersectionObserver(es=>{ for(const e of es){ if(e.isIntersecting){
     e.target.classList.add('in');
     e.target.querySelectorAll('.odo').forEach(count);
+    e.target.querySelectorAll('.dec').forEach(decode);
+    if(e.target.id==='win'){ const p=e.target.querySelector('.code:not([hidden])');
+      if(p) p.classList.add('in'); }
     io.unobserve(e.target); } } },{threshold:.2});
   document.querySelectorAll('.band .rv, footer .rv, .diffbar, .gh-grid').forEach(el=>io.observe(el));
   const win=$('win'); if(win) io.observe(win);
+
+  /* the-system editor: file tree switches real panes, line reveal replays */
+  if(win){
+    const items=win.querySelectorAll('.titem');
+    const panes=win.querySelectorAll('.code');
+    const fname=$('win-fname');
+    items.forEach(b=>b.onclick=()=>{
+      items.forEach(x=>{ x.classList.toggle('sel',x===b);
+        x.setAttribute('aria-selected',x===b?'true':'false'); });
+      panes.forEach(p=>{ const on=p.dataset.pane===b.dataset.pane;
+        p.hidden=!on;
+        if(on){ p.classList.remove('in'); void p.offsetWidth;
+          if(REDUCED) p.classList.add('in');
+          else requestAnimationFrame(()=>p.classList.add('in')); } });
+      if(fname&&b.dataset.name) fname.textContent=b.dataset.name;
+    });
+  }
 
   /* résumé pinned scrollytelling (sticky stage + scroll progress) */
   const pin=$('xp');
   if(pin){
     const items=pin.querySelectorAll('.xp-item');
     const rail=$('railfill');
-    const T=[0.04,0.42,0.74];
+    const n=items.length;
+    const T=[...items].map((_,i)=> n>1 ? 0.04+i*0.82/(n-1) : 0.04);
     function xp(){
-      if(matchMedia('(max-width:900px)').matches || REDUCED){
+      if(matchMedia('(max-width:900px), (max-height:600px)').matches || REDUCED){
         items.forEach(it=>it.classList.add('on')); if(rail) rail.style.height='100%'; return; }
       const r=pin.getBoundingClientRect();
       const total=r.height-innerHeight;
@@ -1222,91 +1393,88 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) openReader(location.hash.slice(6)); });
 })();
 
-/* ---- knowledge graph (all-visible; click a node to fan out its neighbours) ---- */
+/* ---- knowledge graph: Obsidian-style rotating globe (small dots, hover focus) ---- */
 (function(){
   const cv=$('kg'); if(!cv||typeof GRAPH==='undefined'||!GRAPH.nodes) return;
-  const ctx=cv.getContext('2d'), panel=$('kg-panel');
-  const MONO='#ededed';                // single monochrome node colour on black
-  const colr=ci=>MONO;
+  const ctx=cv.getContext('2d'), panel=$('kg-panel'), hud=$('kg-hud');
   const N=GRAPH.nodes, E=GRAPH.edges;
   N.forEach((n,i)=>n._i=i);
   const adj=N.map(()=>[]); E.forEach(e=>{adj[e[0]].push(e[1]); adj[e[1]].push(e[0]);});
-  const edgeObjs=E.map(e=>[N[e[0]],N[e[1]]]);
-  let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2),alpha=1,hover=null,sel=null,drag=null,down=null;
-  const deg=N.map((n,i)=>adj[i].length);
-  const rank=N.map((n,i)=>i).sort((a,b)=>deg[b]-deg[a]);      // most-connected first
-  let SHOW=N.slice(), SEDGES=edgeObjs.slice();
-  function reflow(){                                          // show fewer dots on a smaller graph
-    const cap = W<480?20 : W<720?34 : W<1000?52 : N.length;
-    const keep=new Set(rank.slice(0,Math.min(cap,N.length)));
-    SHOW=N.filter(n=>keep.has(n._i));
-    SEDGES=edgeObjs.filter(e=>keep.has(e[0]._i)&&keep.has(e[1]._i)); alpha=1; }
+  if(hud) hud.textContent='nodes '+N.length+' · edges '+E.length+' · drag to rotate · click a dot';
+  let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
   function resize(){ const r=cv.getBoundingClientRect(); W=r.width; H=r.height;
-    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); reflow(); }
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
   new ResizeObserver(resize).observe(cv); resize();
-  N.forEach((n,i)=>{ const a=i*2.399, R=Math.min(W,H)*(0.12+0.28*Math.sqrt((i%23)/23));
-    n.x=W/2+Math.cos(a)*R + (n.ci? -120:120); n.y=H/2+Math.sin(a)*R; n.vx=0; n.vy=0;
-    n._b=REDUCED?0:400+i*40; });                              // staggered pop-in (DESIGN.md §7.2 #5)
-  const born=performance.now();
-  const isNbr=n=>sel&&(n===sel||adj[sel._i].indexOf(n._i)>=0);
 
-  function step(){
-    const cx=W/2,cy=H/2;
-    for(const n of SHOW){ n.vx+=(cx-n.x)*0.004; n.vy+=(cy-n.y)*0.004; }
-    for(let i=0;i<SHOW.length;i++)for(let j=i+1;j<SHOW.length;j++){
-      const a=SHOW[i],b=SHOW[j]; let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||.01,d=Math.sqrt(d2);
-      let f=Math.min((a.r*b.r*11)/d2,40); a.vx+=dx/d*f; a.vy+=dy/d*f; b.vx-=dx/d*f; b.vy-=dy/d*f; }
-    for(const e of SEDGES){ const a=e[0],b=e[1];
-      const spread=sel&&(a===sel||b===sel)?95:0;               // fan neighbours of selected out
-      let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||.01;
-      let k=(d-(a.r+b.r+40+spread))*0.02; a.vx+=dx/d*k; a.vy+=dy/d*k; b.vx-=dx/d*k; b.vy-=dy/d*k; }
-    for(const n of SHOW){ if(n===drag)continue;
-      n.vx=Math.max(-8,Math.min(8,n.vx*0.9)); n.vy=Math.max(-8,Math.min(8,n.vy*0.9));
-      n.x+=n.vx*alpha; n.y+=n.vy*alpha;
-      n.x=Math.max(n.r+4,Math.min(W-n.r-4,n.x)); n.y=Math.max(n.r+4,Math.min(H-n.r-4,n.y)); }
-    if(alpha>0.25) alpha*=0.992;                               // settle, keep a little life
+  /* fibonacci-sphere layout: the graph is literally round */
+  const GA=Math.PI*(3-Math.sqrt(5));
+  N.forEach((n,i)=>{ const y=1-2*(i+0.5)/N.length, r=Math.sqrt(1-y*y), a=GA*i;
+    n.sx=Math.cos(a)*r; n.sy=y; n.sz=Math.sin(a)*r; });
+
+  let yaw=0.6,pitch=-0.22,vyaw=0,hover=null,sel=null,drag=null;
+  const PERS=3.2, born=performance.now();
+  function project(n){
+    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+    const x=n.sx*cy+n.sz*sy, z=-n.sx*sy+n.sz*cy;
+    const y2=n.sy*cp-z*sp, z2=n.sy*sp+z*cp;
+    const R=Math.min(W,H)*0.38, f=PERS/(PERS-z2);
+    n.px=W/2+x*R*f; n.py=H/2+y2*R*f; n.pz=z2; n.pf=f;
   }
-  function appear(n){ return Math.min(1,Math.max(0,(performance.now()-born-n._b)/350)); }
+  const isNbr=(m,n)=>m&&(n===m||adj[m._i].indexOf(n._i)>=0);
+
   function draw(){
     ctx.clearRect(0,0,W,H);
-    for(const e of SEDGES){ const a=e[0],b=e[1], note=a.type==='note'?a:b, hot=sel&&(a===sel||b===sel);
-      const ap=Math.min(appear(a),appear(b)); if(ap<=0) continue;
-      ctx.strokeStyle=colr(note.ci); ctx.globalAlpha=(hot?0.85:(sel?0.06:0.18))*ap; ctx.lineWidth=hot?1.6:0.9;
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
-    ctx.globalAlpha=1;
-    for(const n of SHOW){
-      const ap=appear(n); if(ap<=0) continue;
-      const c=colr(n.ci), dim=sel&&!isNbr(n);
-      ctx.globalAlpha=(dim?0.28:1)*ap;
-      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*ap,0,6.283);
-      if(n.type==='tag'){ ctx.fillStyle=c; ctx.fill(); }          // topics: solid
-      else { ctx.fillStyle='#232323'; ctx.fill(); ctx.lineWidth=2.4; ctx.strokeStyle=c; ctx.stroke(); }  // notes: hollow ring on the charcoal graph
-      ctx.globalAlpha=1;
+    const birth=REDUCED?1:Math.min(1,(performance.now()-born)/1200);
+    N.forEach(project);
+    const focus=hover||sel;
+    for(const e of E){ const a=N[e[0]],b=N[e[1]];
+      const hot=focus&&(a===focus||b===focus);
+      const depth=((a.pz+b.pz)/2+1)/2;
+      ctx.strokeStyle=hot?'#d6a878':'#8f8b84';
+      ctx.globalAlpha=(hot?0.85:(focus?0.04:0.05+0.11*depth))*birth;
+      ctx.lineWidth=hot?1.2:0.6;
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke(); }
+    const order=[...N].sort((a,b)=>a.pz-b.pz);          // paint back-to-front
+    for(const n of order){
+      const nb=focus&&isNbr(focus,n);
+      const base=(n.type==='tag'?2.6:1.7)*n.pf;
+      const front=(n.pz+1)/2;
+      ctx.globalAlpha=(focus?(nb?1:0.15):0.35+0.65*front)*birth;
+      ctx.fillStyle=(n===focus)?'#d6a878':(nb?'#f1eee7':'#ededed');
+      ctx.beginPath(); ctx.arc(n.px,n.py,nb?base*1.7:base,0,6.283); ctx.fill();
     }
-    for(const n of SHOW){                                        // labels on top
-      if(appear(n)<1) continue;
-      const dim=sel&&!isNbr(n);
-      // big balls (topics) always labelled; small balls (notes) only when clicked/hovered
-      const show = n.type==='tag' || n===hover || isNbr(n);
-      if(!show) continue;
-      const lab = n.type==='tag' ? n.label : n.full.replace(/^\d+\.\s*/,'');
-      ctx.globalAlpha=dim?0.3:1;
-      ctx.font=(n.type==='tag'?'600 12px':'500 11px')+' Inter,sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='top';
-      ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.x,n.y+n.r+3);  // charcoal halo
-      ctx.fillStyle='#ededed'; ctx.fillText(lab,n.x,n.y+n.r+3);                     // light labels
+    if(focus){ ctx.globalAlpha=1;
+      const labs=[focus].concat(adj[focus._i].map(i=>N[i]).filter(n=>n.pz>-0.3).slice(0,8));
+      for(const n of labs){
+        const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
+        ctx.font=(n===focus?'600 12px ':'500 10px ')+'"JetBrains Mono",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='top';
+        ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.px,n.py+7);
+        ctx.fillStyle=n===focus?'#d6a878':'#c9c5bd'; ctx.fillText(lab,n.px,n.py+7);
+      }
     }
     ctx.globalAlpha=1;
   }
-  let visible=true;                                             // pause the loop off-screen
+  let visible=true;                                     // pause the loop off-screen
   new IntersectionObserver(es=>{ visible=es[0].isIntersecting; },{threshold:0}).observe(cv);
-  function loop(){ if(visible && !document.hidden){ step(); draw(); } requestAnimationFrame(loop); } loop();
+  (function loop(){
+    if(visible && !document.hidden){
+      if(!drag){ yaw+=vyaw; vyaw*=0.94;
+        if(!REDUCED && !hover && !sel) yaw+=0.0016; }   // idle rotation
+      pitch=Math.max(-1.2,Math.min(1.2,pitch));
+      draw();
+    }
+    requestAnimationFrame(loop);
+  })();
 
-  function nodeAt(x,y){ for(let i=SHOW.length-1;i>=0;i--){const n=SHOW[i];
-    if((x-n.x)**2+(y-n.y)**2<=(n.r+3)**2) return n;} return null; }
+  function nodeAt(x,y){ let best=null,bd=169;           // 13px hit radius, front hemisphere first
+    for(const n of N){ if(n.pz<-0.25) continue;
+      const d=(x-n.px)*(x-n.px)+(y-n.py)*(y-n.py);
+      if(d<bd){ bd=d; best=n; } }
+    return best; }
   function selectNode(n){
-    sel=n; alpha=Math.max(alpha,0.9);
-    const nbrs = adj[n._i].map(i=>N[i]);
+    sel=n;
+    const nbrs=adj[n._i].map(i=>N[i]);
     let h='<button class="pclose" title="close" aria-label="Close panel">✕</button>';
     if(n.type==='tag'){
       h+='<div class="ph"><b>'+n.label+'</b><span>'+n.count+' write-up'+(n.count>1?'s':'')+'</span></div>';
@@ -1319,23 +1487,42 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       h+=nbrs.filter(x=>x.type==='tag').map(x=>'<a class="pitem" data-tag="'+x._i+'"><span class="pt">'+x.label+'</span></a>').join('');
     }
     panel.innerHTML=h; panel.classList.add('open');
-    panel.querySelector('.pclose').onclick=()=>{ panel.classList.remove('open'); sel=null; alpha=Math.max(alpha,0.7); };
+    panel.querySelector('.pclose').onclick=()=>{ panel.classList.remove('open'); sel=null; };
     panel.querySelectorAll('.pitem').forEach(a=>a.onclick=()=>{
       if(a.dataset.id||a.dataset.open) window.expandCard(a.dataset.id||a.dataset.open);
       else if(a.dataset.tag) selectNode(N[+a.dataset.tag]);
     });
   }
   cv.addEventListener('mousemove',e=>{ const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    if(drag){ drag.x=x; drag.y=y; drag.vx=drag.vy=0; return; }
+    if(drag){ const dx=x-drag.x, dy=y-drag.y;
+      yaw+=dx*0.005; pitch+=dy*0.003; vyaw=dx*0.0007;
+      drag.x=x; drag.y=y;
+      if(Math.abs(x-drag.x0)+Math.abs(y-drag.y0)>4) drag.moved=true;
+      return; }
     hover=nodeAt(x,y); cv.style.cursor=hover?'pointer':'grab'; });
-  cv.addEventListener('mousedown',e=>{ const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    const n=nodeAt(x,y); down={n,x,y,moved:false}; if(n){drag=n; alpha=Math.max(alpha,0.8);} });
-  window.addEventListener('mousemove',e=>{ if(down&&!down.moved){ const r=cv.getBoundingClientRect();
-    if(Math.abs(e.clientX-r.left-down.x)+Math.abs(e.clientY-r.top-down.y)>4) down.moved=true; } });
-  window.addEventListener('mouseup',()=>{ if(down&&!down.moved){
-      if(down.n) selectNode(down.n);
-      else { sel=null; panel.classList.remove('open'); alpha=Math.max(alpha,0.6); } }
-    drag=null; down=null; });
+  cv.addEventListener('mouseleave',()=>{ hover=null; });
+  cv.addEventListener('mousedown',e=>{ const r=cv.getBoundingClientRect();
+    drag={x:e.clientX-r.left,y:e.clientY-r.top,x0:e.clientX-r.left,y0:e.clientY-r.top,moved:false};
+    cv.style.cursor='grabbing'; });
+  window.addEventListener('mouseup',e=>{ if(!drag) return;
+    if(!drag.moved){ const r=cv.getBoundingClientRect();
+      const n=nodeAt(e.clientX-r.left,e.clientY-r.top);
+      if(n) selectNode(n);
+      else { sel=null; panel.classList.remove('open'); } }
+    drag=null; cv.style.cursor='grab'; });
+  /* touch: one finger rotates */
+  cv.addEventListener('touchstart',e=>{ const t=e.touches[0],r=cv.getBoundingClientRect();
+    drag={x:t.clientX-r.left,y:t.clientY-r.top,x0:t.clientX-r.left,y0:t.clientY-r.top,moved:false}; },{passive:true});
+  cv.addEventListener('touchmove',e=>{ if(!drag) return;
+    const t=e.touches[0],r=cv.getBoundingClientRect(),x=t.clientX-r.left,y=t.clientY-r.top;
+    yaw+=(x-drag.x)*0.005; pitch+=(y-drag.y)*0.003;
+    if(Math.abs(x-drag.x0)+Math.abs(y-drag.y0)>6) drag.moved=true;
+    drag.x=x; drag.y=y; },{passive:true});
+  cv.addEventListener('touchend',e=>{ if(drag&&!drag.moved){
+      const t=e.changedTouches[0],r=cv.getBoundingClientRect();
+      const n=nodeAt(t.clientX-r.left,t.clientY-r.top);
+      if(n) selectNode(n); }
+    drag=null; },{passive:true});
 })();
 </script>"""
 
