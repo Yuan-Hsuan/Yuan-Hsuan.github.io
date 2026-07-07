@@ -353,6 +353,7 @@ HEAD = """<!doctype html>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script data-goatcounter="https://yuanhsuan.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
 :root{  /* cream site (contentarchitecture #feature) + black graph */
   --bg:#f1eee7; --surface:#ffffff; --surface2:#f5f1e8; --border:#e3ddd0;
@@ -599,8 +600,9 @@ CARDS_SECTION = """
   </section>"""
 
 FOOTER = """
-  <footer>Built from markdown by <code>site/build.py</code> — static, no backend, no tracking.
-    Only <code>visibility:public</code> content is shown.</footer>
+  <footer>Built from markdown by <code>site/build.py</code> — static, no backend, privacy-friendly
+    analytics (<a href="https://www.goatcounter.com" target="_blank" rel="noopener">GoatCounter</a>,
+    no cookies). Only <code>visibility:public</code> content is shown.</footer>
   </div>
 
   <nav class="floatnav" id="floatnav">
