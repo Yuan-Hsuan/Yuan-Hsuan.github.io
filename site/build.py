@@ -3,11 +3,12 @@
 build.py — static site generator for the "Learning in Public" portfolio.
 
 Walks the public content folders, reads each file's YAML frontmatter (per ../SCHEMA.md),
-and writes a single self-contained ../index.html:
+and writes a single self-contained ../index.html laid out as full-bleed cream/black
+bands (design contract: ../DESIGN.md):
 
-  1. an interactive **knowledge graph** (Obsidian-style, note + topic nodes),
-  2. a **LeetCode coverage** panel (from site/solved.json), and
-  3. the **deep-dive write-up cards** (only `visibility: public`).
+  hero (thesis + knowledge graph) → 01 start here → 02 experience (pinned scrolly,
+  black) → 03 activity (GitHub calendar) → 04 the system (code window, black) →
+  05 AI notes → 06 practice log (write-up archive) → footer (black)
 
 No dependencies (stdlib only). No backend. GitHub Pages serves the output.
 The page is assembled by plain string concatenation (not str.format) so the
@@ -21,16 +22,57 @@ import html
 import json
 import re
 import shutil
+import urllib.request
 from collections import Counter, defaultdict
+from datetime import date
 from pathlib import Path
 
 # ---- config -----------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent          # repo root
 CONTENT_DIRS = ["leetcode", "ai-knowledge"]            # public domains shown on the site
 GITHUB_USER = "Yuan-Hsuan"
+LINKEDIN_URL = "https://www.linkedin.com/in/yuan-hsuan-wen/"
 OUT = ROOT / "index.html"
 
 WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")             # [[note]] links, Obsidian-style
+
+# ---- curated picks (section 01 — DESIGN.md §6) --------------------------------
+# id must exist in the collected cards; missing ids are skipped gracefully.
+CURATED = [
+    dict(id="ai-backprop", meta="AI / CS224n · Note 05",
+         why="Deriving the gradients on paper before letting PyTorch do it — with the "
+             "shape-checking habit that catches most of my bugs."),
+    dict(id="lc-largest-rectangle-in-histogram", meta="LeetCode 84 · Hard · Mastery 5/5",
+         why="The monotonic-stack invariant, built up from the O(n²) version — how a "
+             "trick becomes a reusable pattern."),
+    dict(id="lc-median-of-two-sorted-arrays", meta="LeetCode 4 · Hard · Mastery 5/5",
+         why="Binary search on the partition, not the value — including the off-by-one "
+             "traps I fell into first."),
+]
+
+# ---- experience (section 02 — web-native résumé, DESIGN.md §6) ----------------
+EXPERIENCE = [
+    dict(when="2025 — 2026 · 7 mo", org="NVIDIA",
+         role="Software Intern — AI debugging engine",
+         bullets=[
+            'Built an AI layer for Android <b>CTS failure triage</b>: a coarse-to-fine '
+            'pipeline that routes each failure to the owning module and points at the '
+            'suspect code block.',
+            '<b>No training cluster, one consumer GPU</b> — an AST engine pre-filters the '
+            'LLM’s context to a fraction of the tokens. <span class="xp-hook">'
+            '“I couldn’t scale the hardware, so I shrank the problem.”</span>',
+            '<b>~80% of routine triage automated</b>; adopted as a permanent asset.']),
+    dict(when="2020 — 2023 · 3 yrs", org="Broadcom",
+         role="System Software Engineer",
+         bullets=[
+            'Turned highly manual <b>network/hardware validation</b> into end-to-end '
+            '<b>automated pipelines</b> — the systems habits the NVIDIA work was built on.']),
+    dict(when="2024 — 2026", org="University of Southern California",
+         role="M.S. Computer Science",
+         bullets=[
+            'Alongside coursework: <b>Stanford CS224n self-study</b> (this site’s AI '
+            'notes) and a steady algorithms practice log.']),
+]
 
 # ---- external AI notes (single source of truth: the CS224n study repo) -------
 # The notes live in the sibling repo; we read them at build time so the site is
@@ -300,57 +342,350 @@ def load_solved():
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
-# ---- HTML pieces ------------------------------------------------------------
-def solved_html(solved):
-    if not solved:
-        return ""
-    c = solved.get("counts", {})
-    user = solved.get("username", GITHUB_USER)
+# ---- GitHub contribution calendar (section 03) --------------------------------
+# Fetched at build time from GitHub's public contributions endpoint (no token),
+# cached in site/contrib.json so offline builds still work. Section is omitted
+# entirely if neither the network nor the cache yields data.
+CONTRIB_WEEKS = 20
+
+def load_contrib():
+    cache = ROOT / "site" / "contrib.json"
+    days = None
+    try:
+        req = urllib.request.Request(
+            f"https://github.com/users/{GITHUB_USER}/contributions",
+            headers={"User-Agent": "Mozilla/5.0 (build.py)"})
+        page_html = urllib.request.urlopen(req, timeout=10).read().decode("utf-8")
+        found = {}
+        for td in re.findall(r"<td[^>]*ContributionCalendar-day[^>]*>", page_html):
+            d = re.search(r'data-date="(\d{4}-\d{2}-\d{2})"', td)
+            l = re.search(r'data-level="(\d)"', td)
+            if d and l:
+                found[d.group(1)] = int(l.group(1))
+        if found:
+            days = [{"date": k, "level": v} for k, v in sorted(found.items())]
+            cache.write_text(json.dumps({"days": days}), encoding="utf-8")
+    except Exception as exc:                                     # offline → cache
+        print(f"  (contributions fetch failed: {exc}; trying cache)")
+    if days is None and cache.exists():
+        days = json.loads(cache.read_text(encoding="utf-8")).get("days")
+    if not days:
+        return None
+    days = days[-(CONTRIB_WEEKS * 7 + 6):]
+    off = (date.fromisoformat(days[0]["date"]).weekday() + 1) % 7   # align col 1 to Sunday
+    days = days[(7 - off) % 7:][:CONTRIB_WEEKS * 7]
+    months, seen = [], None
+    for i in range(0, len(days), 7):
+        m = date.fromisoformat(days[i]["date"]).strftime("%b")
+        months.append(m if m != seen else "")
+        seen = m
+    return {"levels": [d["level"] for d in days], "months": months}
+
+
+# ---- HTML section builders ----------------------------------------------------
+def esc(s):
+    return html.escape(str(s), quote=True)
+
+
+def hero_html(cards, solved):
+    n_ai = sum(1 for c in cards if c["domain"] == "ai")
+    n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
+    total = (solved or {}).get("counts", {}).get("total", 0)
     return f"""
-  <section class="block" id="coverage">
-    <h2>LeetCode coverage</h2>
-    <p class="lede"><b>{c.get('total',0)}</b> problems solved on
-      <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">leetcode.com/u/{user}</a>.
-      The cards further down are the ones I wrote up in full.</p>
-    <div class="tiles">
-      <div class="tile"><b>{c.get('total',0)}</b><span>solved</span></div>
-      <div class="tile"><b class="c-easy">{c.get('easy',0)}</b><span>Easy</span></div>
-      <div class="tile"><b class="c-medium">{c.get('medium',0)}</b><span>Medium</span></div>
-      <div class="tile"><b class="c-hard">{c.get('hard',0)}</b><span>Hard</span></div>
+  <header class="hero2" id="top">
+    <div class="hero2-left">
+      <p class="kicker rv" style="--d:0s"><span>Yuan-Hsuan Wen</span><span aria-hidden="true">·</span><span id="typed"></span><span class="cursor" aria-hidden="true"></span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
+      <h1 class="rv" style="--d:.15s">The <em>reasoning</em>, not just the code.</h1>
+      <p class="hero-sub rv" style="--d:.3s">A systems engineer moving into AI infrastructure —
+      logging the practice honestly: the trade-offs and the mistakes, not just accepted submissions.</p>
+      <div class="stats rv" style="--d:.45s">
+        <div class="sgroup">
+          <div class="sl">AI / CS224n</div>
+          <div class="srow">
+            <div class="stat"><div class="n odo" data-n="{n_ai}">0</div><div class="l">deep notes</div></div>
+            <div class="stat"><div class="n">minBERT</div><div class="l">in progress</div></div>
+          </div>
+        </div>
+        <div class="vdiv" aria-hidden="true"></div>
+        <div class="sgroup">
+          <div class="sl">LeetCode</div>
+          <div class="srow">
+            <div class="stat"><div class="n odo" data-n="{total}">0</div><div class="l">solved</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_lc}">0</div><div class="l">write-ups</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="actions rv" style="--d:.6s">
+        <a class="btn primary" href="#start">Start here ↓</a>
+        <a class="btn" href="#xp">Résumé ↓</a>
+        <a class="btn" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+    <div class="hero2-right">
+      <canvas id="kg" aria-label="Knowledge graph of write-ups and topics"></canvas>
+      <div class="kg-hint">click to fan out · drag</div>
+      <aside class="kg-panel" id="kg-panel"></aside>
+    </div>
+    <div class="cue" aria-hidden="true">↓</div>
+  </header>"""
+
+
+def start_here_html(cards):
+    by_id = {c["id"]: c for c in cards}
+    items = []
+    for i, pick in enumerate(CURATED):
+        c = by_id.get(pick["id"])
+        if not c:
+            continue
+        tags = " · ".join(c["tags"][:2])
+        items.append(
+            f'<a class="card2 rv" style="--d:{i*0.1:.1f}s" href="#card-{esc(c["id"])}" '
+            f'onclick="expandCard(\'{esc(c["id"])}\');return false;">'
+            f'<div class="meta">{esc(pick["meta"])}</div>'
+            f'<h3>{esc(c["title"])}</h3>'
+            f'<p class="why">{esc(pick["why"])}</p>'
+            f'<div class="foot"><span>{esc(tags)}</span><span class="go">Read</span></div></a>')
+    if not items:
+        return ""
+    return ('\n  <section class="band" id="start">\n    <div class="wrap">\n'
+            '      <div class="sec-head rv">\n'
+            '        <p class="kicker"><span class="idx">01</span><span>Start here</span></p>\n'
+            '        <h2>Three write-ups that show how I think.</h2>\n'
+            '        <p>Hand-picked, not sorted by recency. If you only have ten minutes, read these.</p>\n'
+            '      </div>\n      <div class="cards2">' + "".join(items) + '</div>\n'
+            '    </div>\n  </section>')
+
+
+def experience_html():
+    rows = []
+    for i, e in enumerate(EXPERIENCE):
+        lis = "".join(f"<li>{b}</li>" for b in e["bullets"])
+        rows.append(
+            f'<div class="xp-item" data-step="{i}">'
+            f'<div class="xp-when">{esc(e["when"])}</div>'
+            f'<h3>{esc(e["org"])}</h3>'
+            f'<p class="xp-role">{esc(e["role"])}</p>'
+            f'<ul>{lis}</ul></div>')
+    return f"""
+  <section class="band dark xp-pin" id="xp">
+    <div class="xp-stage">
+      <div class="wrap wide xp-grid">
+        <div class="xp-left">
+          <p class="kicker"><span class="idx">02</span><span>Experience</span></p>
+          <h2>Systems engineer,<br>moving into AI infrastructure.</h2>
+          <p class="pitch">“I don’t want to train the models — I want to build the
+          engine that makes them fast and reliable.”</p>
+          <div class="xp-cta">
+            <a class="btn primary" href="{LINKEDIN_URL}" target="_blank" rel="noopener">Full history on LinkedIn ↗</a>
+            <span class="xp-note">No PDF here on purpose — this page <em>is</em> the résumé,
+            and it’s always current.</span>
+          </div>
+        </div>
+        <div class="xp-right">
+          <div class="rail" aria-hidden="true"><i id="railfill"></i></div>
+          {"".join(rows)}
+        </div>
+      </div>
     </div>
   </section>"""
 
 
-def page(cards, graph, solved):
+def activity_html(contrib):
+    if not contrib:
+        return ""
+    return f"""
+  <section class="band" id="activity">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="kicker"><span class="idx">03</span><span>Activity</span></p>
+        <h2>Showing up, in public.</h2>
+        <p>Every gold square is a commit to this log or its notes — pulled from GitHub at build time.</p>
+      </div>
+      <div class="gh rv">
+        <div class="gh-head">
+          <a class="gh-title" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">github.com/{GITHUB_USER} — contributions</a>
+          <span class="gh-title">Last {CONTRIB_WEEKS} weeks</span>
+        </div>
+        <div class="gh-months" id="ghmonths" aria-hidden="true"></div>
+        <div class="gh-grid" id="ghgrid" role="img" aria-label="GitHub contribution calendar, last {CONTRIB_WEEKS} weeks"></div>
+        <div class="gh-foot">
+          <span class="gh-note">Started logging publicly in spring 2026 — the streak is young on purpose.</span>
+          <span class="gh-leg">Less
+            <i style="background:var(--gh0)"></i><i style="background:var(--gh1)"></i><i style="background:var(--gh2)"></i><i style="background:var(--gh3)"></i><i style="background:var(--gh4)"></i>
+          More</span>
+        </div>
+      </div>
+    </div>
+  </section>"""
+
+
+# The code window shows the REAL safety-belt lines from collect() above — if that
+# code changes, update this snippet (they are asserted to stay in sync in main()).
+SYSTEM_SECTION = """
+  <section class="band dark" id="sys">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="kicker"><span class="idx">04</span><span>The system</span></p>
+        <h2>This site is itself a project.</h2>
+        <p>No framework, no build dependencies — one Python script turns a private second-brain
+        repo into this page. This is the actual code that keeps private notes private.</p>
+      </div>
+      <div class="frame rv">
+        <div class="win" id="win">
+          <div class="win-bar">
+            <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span class="fname">site/build.py — dependency-free static site generator</span>
+          </div>
+          <div class="win-body">
+            <div class="tree" aria-hidden="true">
+<b>~/github</b>
+├ mind/               <span class="lock">🔒 private</span>
+│ ├ resume/
+│ ├ bq/ · system-design/
+│ └ cli/  <span class="lock">spaced repetition</span>
+└ <b>Yuan-Hsuan.github.io/</b>
+  ├ leetcode/*.md
+  ├ ai-knowledge/*.md
+  ├ <span class="sel"> site/build.py ●</span>
+  └ index.html  <span class="lock">← output</span>
+            </div>
+            <div class="code"><pre>
+<span class="ln" style="--d:.05s"><span class="no"></span><span class="c"># the safety belt: private notes can never render</span></span>
+<span class="ln" style="--d:.15s"><span class="no"></span><span class="k">def</span> <span class="f">collect</span>():</span>
+<span class="ln" style="--d:.25s"><span class="no"></span>    cards = []</span>
+<span class="ln" style="--d:.35s"><span class="no"></span>    <span class="k">for</span> path <span class="k">in</span> <span class="f">sorted</span>((ROOT / d).rglob(<span class="s">"*.md"</span>)):</span>
+<span class="ln" style="--d:.45s"><span class="no"></span>        meta, body = parse_frontmatter(path.read_text())</span>
+<span class="ln" style="--d:.55s"><span class="no"></span>        <span class="hl"><span class="k">if</span> meta.get(<span class="s">"visibility"</span>) != <span class="s">"public"</span>:</span></span>
+<span class="ln" style="--d:.65s"><span class="no"></span>            <span class="hl"><span class="k">continue</span>  <span class="c"># ← everything else stays private</span></span></span>
+<span class="ln" style="--d:.75s"><span class="no"></span>        cards.append(…)</span>
+<span class="ln" style="--d:.85s"><span class="no"></span>    <span class="k">return</span> cards<span class="cursor" aria-hidden="true"></span></span>
+</pre></div>
+          </div>
+        </div>
+      </div>
+      <p class="win-cap rv">Markdown in → one Python script (stdlib only) → static HTML out.
+      No backend, cookieless analytics. The Notion “Coding Report” pipeline feeds leetcode/*.md.</p>
+    </div>
+  </section>"""
+
+
+def ai_notes_html(cards):
+    ai = [c for c in cards if c["domain"] == "ai"]
+    if not ai:
+        return ""
+    rows = []
+    for i, c in enumerate(ai):
+        rows.append(
+            f'<a class="row rv" style="--d:{i*0.06:.2f}s" href="#card-{esc(c["id"])}" '
+            f'onclick="expandCard(\'{esc(c["id"])}\');return false;">'
+            f'<span class="i">{i+1:02d}</span><span class="t">{esc(c["title"])}</span>'
+            f'<span class="d">cs224n · mastery {c["mastery"]}/5</span></a>')
+    return ('\n  <section class="band" id="ai">\n    <div class="wrap">\n'
+            '      <div class="sec-head rv">\n'
+            '        <p class="kicker"><span class="idx">05</span><span>AI notes</span></p>\n'
+            '        <h2>Stanford CS224n, worked through by hand.</h2>\n'
+            '        <p>Concept notes written after doing the math and the PyTorch myself — not summaries of slides.</p>\n'
+            '      </div>\n      <div class="rows">' + "".join(rows) + '</div>\n'
+            '    </div>\n  </section>')
+
+
+def log_html(cards, solved):
+    n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
+    c = (solved or {}).get("counts", {})
+    total, e, m, h = (c.get(k, 0) for k in ("total", "easy", "medium", "hard"))
+    user = (solved or {}).get("username", GITHUB_USER)
+    bar = ""
+    if total:
+        bar = f"""
+      <div class="diffbar" role="img" aria-label="Difficulty split: {e} easy, {m} medium, {h} hard">
+        <span class="e" style="flex:{e}"></span><span class="m" style="flex:{m}"></span><span class="h" style="flex:{h}"></span>
+      </div>
+      <div class="difflab rv">
+        <span><span class="dot" style="background:var(--easy)"></span>Easy {e}</span>
+        <span><span class="dot" style="background:var(--medium)"></span>Medium {m}</span>
+        <span><span class="dot" style="background:var(--hard)"></span>Hard {h}</span>
+      </div>"""
+    return f"""
+  <section class="band" id="log">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="kicker"><span class="idx">06</span><span>Practice log</span></p>
+        <h2>The daily reps.</h2>
+        <p>{total} solved is just volume — the {n_lc} write-ups are the point: pattern, trade-offs,
+        and a recall prompt for spaced repetition.</p>
+      </div>
+      <div class="lc-inline rv"><span><b>{total}</b> solved</span><span><b>{n_lc}</b> write-ups</span>
+        <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">leetcode.com/u/{user} ↗</a></div>{bar}
+      <div class="controls rv">
+        <select id="f-domain" aria-label="Filter by domain"><option value="">All domains</option>
+          <option value="leetcode">LeetCode</option><option value="ai">AI Knowledge</option></select>
+        <select id="f-diff" aria-label="Filter by difficulty"><option value="">All difficulty</option>
+          <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+        <select id="f-tag" aria-label="Filter by topic"><option value="">All topics</option></select>
+        <input id="f-search" type="search" placeholder="search…" style="flex:0 1 180px" aria-label="Search write-ups">
+        <span class="count" id="c-count"></span>
+      </div>
+      <div id="grid"></div>
+    </div>
+  </section>"""
+
+
+FOOTER = f"""
+  <footer class="band dark">
+    <div class="wrap rv">
+      <p class="fline">Built from markdown by <code>site/build.py</code> — static, no backend,
+      privacy-friendly analytics (<a href="https://www.goatcounter.com" target="_blank" rel="noopener">GoatCounter</a>,
+      no cookies). Only <code>visibility:public</code> content is shown.</p>
+      <div class="fm">
+        <span>Last build __BUILD_MONTH__</span>
+        <a href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="https://leetcode.com/u/{GITHUB_USER}/" target="_blank" rel="noopener">LeetCode ↗</a>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="floatnav" id="floatnav" aria-label="Sections">
+    <a href="#top" data-sec="top">Graph</a>
+    <a href="#start" data-sec="start">Start</a>
+    <a href="#xp" data-sec="xp">Résumé</a>
+    <a href="#ai" data-sec="ai">Notes</a>
+    <a href="#log" data-sec="log">Log</a>
+  </nav>"""
+
+
+def page(cards, graph, solved, contrib):
     data = ("<script>\n"
             f"const CARDS = {json.dumps(cards, ensure_ascii=False)};\n"
             f"const GRAPH = {json.dumps(graph, ensure_ascii=False)};\n"
             f"const TAGS = {json.dumps(sorted({t for c in cards for t in c['tags']}), ensure_ascii=False)};\n"
+            f"const CONTRIB = {json.dumps(contrib, ensure_ascii=False)};\n"
             "</script>")
-    n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
-    n_ai = sum(1 for c in cards if c["domain"] == "ai")
-    legend = "".join(f'<span><i data-ci="{g["ci"]}"></i>{html.escape(g["label"])}</span>'
-                     for g in graph["groups"])
-    return (HEAD + "\n<body>\n"
-            + HEADER.replace("__USER__", GITHUB_USER).replace("__LEGEND__", legend)
-            + '\n  <div class="wrap">\n'
-            + solved_html(solved)
-            + CARDS_SECTION.replace("__NLC__", str(n_lc)).replace("__NAI__", str(n_ai))
-            + FOOTER + "\n" + data + "\n" + SCRIPT + "\n</body>\n</html>")
+    build_month = date.today().strftime("%Y-%m")
+    out = (HEAD + "\n<body>\n"
+           + hero_html(cards, solved)
+           + start_here_html(cards)
+           + experience_html()
+           + activity_html(contrib)
+           + SYSTEM_SECTION
+           + ai_notes_html(cards)
+           + log_html(cards, solved)
+           + FOOTER + "\n" + data + "\n" + SCRIPT + "\n</body>\n</html>")
+    return out.replace("__BUILD_MONTH__", build_month)
 
 
 # ---- static chunks ----------------------------------------------------------
 HEAD = """<!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
 <title>Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups</title>
 <meta name="description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — an early-career engineer learning CS &amp; AI in public.">
 <link rel="canonical" href="https://yuan-hsuan.github.io/">
 <meta name="author" content="Yuan-Hsuan Wen">
-<meta name="theme-color" content="#f1eee7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#232323" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f1eee7">
 <!-- favicons -->
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -376,116 +711,271 @@ HEAD = """<!doctype html>
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script data-goatcounter="https://yuanhsuan.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
-:root{  /* cream site (contentarchitecture #feature) + black graph */
+/* Design contract: ../DESIGN.md — single cream theme, full-bleed cream/black bands. */
+:root{
   --bg:#f1eee7; --surface:#ffffff; --surface2:#f5f1e8; --border:#e3ddd0;
   --fg:#232323; --muted:#5b5a56; --accent:#40392e; --gold:#d6a878;
-  --lc:#3a352c; --ai:#8a8378; --kg-link:#4d4d4d;
+  --lc:#3a352c; --ai:#8a8378; --panel:#232323;
   --easy:#8a8a8a; --medium:#5b5a56; --hard:#232323;
-  --serif:"Fraunces",Georgia,serif; --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
+  --gh0:#e7e0d1; --gh1:#eeddc2; --gh2:#dfb98a; --gh3:#c08a4d; --gh4:#8f6132;
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;overflow-x:clip}
+html{scroll-behavior:smooth;overflow-x:clip;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.65;
-  -webkit-font-smoothing:antialiased;}
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
-.wrap{max-width:880px;margin:0 auto;padding:0 24px}
+::selection{background:color-mix(in srgb,var(--gold) 45%,transparent)}
+.wrap{max-width:960px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
+.wrap.wide{max-width:1200px}
 code,.mono{font-family:var(--mono)}
+h1,h2,h3{text-wrap:balance}
 
-/* header */
-.top{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
-  background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--border)}
-.top .wrap{display:flex;align-items:center;gap:16px;height:58px}
-.brand{font-family:var(--serif);font-weight:600;font-size:1.05rem;letter-spacing:-.01em}
-.top nav{margin-left:auto;display:flex;gap:20px;font-size:.9rem}
-.top nav a{color:var(--muted)} .top nav a:hover{color:var(--fg);text-decoration:none}
-.theme-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;
-  width:34px;height:34px;cursor:pointer;font-size:.95rem}
-.theme-btn:hover{color:var(--fg)}
-header.hero{padding:80px 0 34px}
-header.hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(2.4rem,6vw,3.8rem);line-height:1.05;
-  letter-spacing:-.02em;margin:0 0 18px}
-header.hero .sub{font-size:1.15rem;color:var(--muted);max-width:40ch;margin:0}
-header.hero .cn{color:var(--muted);opacity:.8;font-size:1rem;margin:8px 0 0}
-.hero-links{margin:26px 0 0;display:flex;gap:12px;flex-wrap:wrap}
-.hero-links a{border:1px solid var(--border);background:var(--surface);color:var(--fg);
-  padding:9px 16px;border-radius:10px;font-size:.9rem}
-.hero-links a:hover{border-color:var(--accent);text-decoration:none}
+/* ---- full-bleed band rhythm ---- */
+.band{padding-block:clamp(4rem,9vw,8.5rem);scroll-margin-top:56px}
+.band + .band:not(.dark){border-top:1px solid var(--border)}
+.band.dark{background:var(--panel);
+  --fg:#f1eee7; --muted:#a8a49c; --border:#413e37;
+  --surface:#2a2823; --surface2:#1d1c19; --accent:#e8dcc6;
+  color:var(--fg)}
 
-/* section shell */
-.block{padding:52px 0 8px;scroll-margin-top:72px}
-.hero2{scroll-margin-top:0}
-.block h2{font-family:var(--serif);font-weight:500;font-size:1.9rem;letter-spacing:-.01em;margin:0 0 6px}
-.lede{color:var(--muted);margin:0 0 22px;max-width:56ch}
+/* ---- motion system (DESIGN.md §7) ---- */
+.rv{opacity:0;transform:translateY(14px);
+  transition:opacity .6s var(--ease),transform .6s var(--ease);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+.cursor{display:inline-block;width:.55em;height:1em;background:var(--gold);
+  vertical-align:text-bottom;animation:blink .9s steps(1,end) infinite}
+@keyframes blink{50%{opacity:0}}
+.ping{position:relative;display:inline-block;width:8px;height:8px;
+  border-radius:50%;background:var(--gold);margin-left:.5em}
+.ping::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:var(--gold);animation:ping 1.8s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{75%,100%{transform:scale(2.4);opacity:0}}
+.cue{position:absolute;left:47%;bottom:18px;transform:translateX(-50%);
+  font-family:var(--mono);font-size:.8rem;color:var(--muted);pointer-events:none;
+  animation:cue 1.4s steps(7,end) infinite}
+@keyframes cue{from{transform:translate(-50%,-8px);opacity:0}
+  50%{opacity:1} to{transform:translate(-50%,6px);opacity:0}}
+.diffbar span{transform:scaleX(0);transform-origin:left;
+  transition:transform .8s var(--ease);transition-delay:var(--d,0s)}
+.diffbar.in span{transform:scaleX(1)}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+  .cursor,.ping::after,.cue{animation:none}
+  .diffbar span{transform:none;transition:none}
+}
 
-/* knowledge graph */
-.kg-shell{position:relative;border:1px solid var(--border);border-radius:16px;overflow:hidden;
-  background:radial-gradient(120% 120% at 50% 0%,var(--surface) 0%,var(--bg) 100%);
-  width:min(96vw,1320px);margin-left:50%;transform:translateX(-50%)}
-#kg{display:block;width:100%;height:min(82vh,820px);cursor:grab}
-.kg-legend{position:absolute;left:14px;top:12px;display:flex;gap:14px;font-size:.78rem;color:var(--muted);
-  background:color-mix(in srgb,var(--bg) 60%,transparent);padding:6px 10px;border-radius:9px;pointer-events:none}
-.kg-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+/* ---- mono metadata voice ---- */
+.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);
+  display:flex;gap:.7em;align-items:center;flex-wrap:wrap;margin:0}
+.kicker .idx{color:var(--gold);font-weight:600}
+
+/* ---- hero (full-viewport split) ---- */
+.hero2{min-height:100svh;display:flex;align-items:stretch;position:relative}
+.hero2-left{flex:0 0 47%;min-width:0;display:flex;flex-direction:column;justify-content:center;
+  gap:1.5rem;padding:clamp(24px,5vw,72px)}
+.hero2 h1{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
+  font-size:clamp(2.4rem,4.6vw,4rem);line-height:1.06;letter-spacing:-.01em;margin:0}
+.hero2 h1 em{font-style:italic;font-weight:600;
+  background:linear-gradient(transparent 70%,color-mix(in srgb,var(--gold) 42%,transparent) 70%)}
+.hero-sub{color:var(--muted);max-width:34rem;margin:0;font-size:1.05rem}
+.stats{display:flex;gap:2.2rem;border-top:1px solid var(--border);padding-top:1.2rem;flex-wrap:wrap}
+.sgroup{display:flex;flex-direction:column;gap:.5rem}
+.sgroup .sl{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+.srow{display:flex;gap:1.6rem}
+.stat .n{font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:1.5rem;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+.stat .l{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted)}
+.vdiv{width:1px;background:var(--border);align-self:stretch}
+.actions{display:flex;gap:.7rem;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;
+  text-decoration:none;padding:.75em 1.3em;border-radius:8px;color:var(--fg);
+  border:1px solid var(--border);user-select:none;
+  transition:border-color .15s,background .15s,color .15s}
+.btn:hover{text-decoration:none;border-color:var(--fg)}
+.btn:focus-visible,.card2:focus-visible,.row:focus-visible{outline:none;
+  box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+.band.dark .btn.primary{background:#f1eee7;color:#232323;border-color:#f1eee7}
+.band.dark .btn.primary:hover{background:var(--gold);border-color:var(--gold)}
+.hero2-right{flex:1 1 53%;align-self:stretch;position:relative;overflow:hidden;background:var(--panel)}
+.hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
 .kg-hint{position:absolute;right:14px;bottom:12px;font-size:.74rem;color:#8a8a8a;pointer-events:none}
-.kg-crumb{position:absolute;left:14px;top:12px;display:none;align-items:center;gap:10px;z-index:3}
-.kg-crumb.show{display:flex}
-.kg-crumb button{background:var(--surface);border:1px solid var(--border);color:var(--fg);
-  border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:.82rem}
-.kg-crumb button:hover{border-color:var(--accent);color:var(--accent)}
-.kg-crumb span{font-family:var(--serif);font-size:1.05rem}
-.kg-panel{position:absolute;right:0;top:0;bottom:0;width:min(320px,78%);background:var(--surface);
-  border-left:1px solid var(--border);transform:translateX(101%);transition:transform .28s ease;
-  overflow:auto;padding:18px 18px 24px}
+.kg-panel{position:absolute;right:0;top:0;bottom:0;width:min(320px,78%);background:#f5f1e8;
+  border-left:1px solid #e3ddd0;transform:translateX(101%);transition:transform .28s var(--ease);
+  overflow:auto;padding:18px 18px 24px;color:#232323}
 .kg-panel.open{transform:none}
 .kg-panel .ph{display:flex;align-items:baseline;gap:8px;margin:0 0 4px}
 .kg-panel .ph b{font-family:var(--serif);font-weight:600;font-size:1.2rem}
-.kg-panel .ph span{color:var(--muted);font-size:.82rem}
-.kg-panel .pclose{position:absolute;right:12px;top:10px;background:none;border:none;color:var(--muted);
+.kg-panel .ph span{color:#5b5a56;font-size:.82rem}
+.kg-panel .pclose{position:absolute;right:12px;top:10px;background:none;border:none;color:#5b5a56;
   font-size:1.1rem;cursor:pointer}
-.kg-panel .pitem{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--border);
-  color:var(--fg);cursor:pointer}
-.kg-panel .pitem:hover{color:var(--accent);text-decoration:none}
+.kg-panel .pitem{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid #e3ddd0;
+  color:#232323;cursor:pointer}
+.kg-panel .pitem:hover{color:#40392e;text-decoration:none}
 .kg-panel .pitem .pt{flex:1 1 auto;font-size:.9rem}
+@media(max-width:900px){
+  .hero2{flex-direction:column;min-height:0}
+  .hero2-left{flex:none;width:100%;padding-top:88px}
+  .hero2-right{flex:none;width:100%;height:56vh}
+  .cue{display:none}
+}
 
-/* tiles */
-.tiles{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 6px}
-.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;min-width:96px}
-.tile b{font-family:var(--serif);font-size:1.7rem;display:block;line-height:1.1}
-.tile span{color:var(--muted);font-size:.82rem}
+/* ---- section heads ---- */
+.sec-head{margin:0 0 2.2rem}
+.sec-head h2, .band h2{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
+  font-size:clamp(1.6rem,2.7vw,2.2rem);letter-spacing:-.005em;line-height:1.2;margin:.5rem 0 0}
+.sec-head p{margin:.5rem 0 0;color:var(--muted);max-width:44rem}
+
+/* ---- start-here cards ---- */
+.cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card2{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1.4rem 1.4rem 1.2rem;display:flex;flex-direction:column;gap:.7rem;
+  text-decoration:none;color:var(--fg);transition:border-color .15s}
+.card2:hover{text-decoration:none;border-color:var(--gold)}
+.card2 .meta{font-family:var(--mono);font-size:.65rem;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted)}
+.card2 h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.18rem;line-height:1.3}
+.card2 .why{color:var(--muted);font-size:.92rem;margin:0;flex:1}
+.card2 .foot{font-family:var(--mono);font-size:.7rem;color:var(--muted);
+  display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.7rem}
+.card2 .foot .go{color:var(--fg)}
+.card2 .foot .go::after{content:"→";display:inline-block;margin-left:.35em;
+  transition:transform .15s var(--ease)}
+@media(hover:hover){ .card2:hover .foot .go::after{transform:translateX(4px)} }
+
+/* ---- experience: pinned scrollytelling on black ---- */
+.xp-pin{height:320vh;position:relative;padding-block:0}
+.xp-stage{position:sticky;top:0;min-height:100svh;display:flex;align-items:center}
+.xp-grid{display:grid;grid-template-columns:minmax(280px,1fr) 1.25fr;
+  gap:clamp(2rem,5vw,5rem);align-items:center;width:100%;padding-block:clamp(3rem,6vh,5rem)}
+.pitch{font-family:var(--serif);font-style:italic;font-size:clamp(1.25rem,2vw,1.55rem);
+  line-height:1.45;margin:1.6rem 0 2rem;border-left:3px solid var(--gold);padding-left:1.2rem}
+.xp-cta .btn{display:inline-block;margin-bottom:.8rem}
+.xp-note{font-family:var(--mono);font-size:.68rem;color:var(--muted);display:block;max-width:26rem}
+.xp-right{position:relative;padding-left:2rem}
+.rail{position:absolute;left:0;top:6px;bottom:6px;width:2px;background:rgba(255,255,255,.14)}
+.rail i{position:absolute;left:0;top:0;width:100%;height:0%;background:var(--gold)}
+.xp-item{padding:1.3rem 0;opacity:.15;transform:translateY(26px);
+  transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.xp-item.on{opacity:1;transform:none}
+.xp-item + .xp-item{border-top:1px solid rgba(255,255,255,.1)}
+.xp-when{font-family:var(--mono);font-size:.68rem;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--gold)}
+.xp-item h3{font-family:var(--serif);font-weight:600;margin:.3rem 0 0;font-size:1.35rem}
+.xp-role{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:.2rem 0 .5rem}
+.xp-item ul{margin:.2rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.95rem}
+.xp-item li{margin:.3rem 0}
+.xp-item li b{color:var(--fg);font-weight:600}
+.xp-hook{font-family:var(--serif);font-style:italic;color:var(--gold)}
+@media(max-width:900px){
+  .xp-pin{height:auto;padding-block:clamp(4rem,9vw,8.5rem)}
+  .xp-stage{position:static;display:block;min-height:0}
+  .xp-grid{display:block;padding-block:0}
+  .xp-right{margin-top:2rem}
+  .xp-item{opacity:1;transform:none}
+}
+@media (prefers-reduced-motion:reduce){ .xp-item{opacity:1;transform:none;transition:none} }
+
+/* ---- the system: deep device frame on black ---- */
+.frame{background:#141311;border:1px solid rgba(255,255,255,.09);
+  border-radius:18px;padding:clamp(8px,1.2vw,14px);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.win{background:#232323;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.win-bar{display:flex;align-items:center;gap:1rem;padding:.8rem 1.1rem;
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.win-bar .dots{display:flex;gap:7px}
+.win-bar .dots i{width:11px;height:11px;border-radius:50%;background:#4a463f}
+.win-bar .fname{font-family:var(--mono);font-size:.72rem;color:#a8a49c;letter-spacing:.04em}
+.win-body{display:grid;grid-template-columns:230px 1fr}
+.tree{border-right:1px solid rgba(255,255,255,.08);padding:1.1rem 0 1.1rem 1rem;
+  font-family:var(--mono);font-size:.74rem;line-height:2;color:#8f8b84;white-space:pre;overflow-x:auto}
+.tree b{color:#f1eee7;font-weight:400}
+.tree .lock{color:var(--gold)}
+.tree .sel{background:#2f2c27;display:inline-block;width:100%;color:#f1eee7}
+.code{padding:1.1rem 1.3rem;overflow-x:auto}
+.code pre{margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.85;color:#c9c5bd}
+.ln{display:block;opacity:0;transform:translateX(8px);
+  transition:opacity .45s var(--ease),transform .45s var(--ease);transition-delay:var(--d,0s)}
+.win.in .ln{opacity:1;transform:none}
+.ln .no{display:inline-block;width:1.4em;color:#565248;user-select:none}
+.k{color:var(--gold)} .s{color:#a8b78c} .c{color:#79746a;font-style:italic}
+.f{color:#e8d5b5} .hl{background:#33302a;border-radius:3px;padding:0 .2em}
+@media(max-width:760px){ .win-body{grid-template-columns:1fr} .tree{display:none} }
+@media (prefers-reduced-motion:reduce){ .ln{opacity:1;transform:none;transition:none} }
+.win-cap{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin:1rem 0 0}
+
+/* ---- github activity ---- */
+.gh{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1.6rem;overflow-x:auto}
+.gh-head{display:flex;justify-content:space-between;align-items:baseline;
+  gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.gh-title{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted)}
+a.gh-title:hover{color:var(--fg);text-decoration:none}
+.gh-months{display:flex;font-family:var(--mono);font-size:.62rem;color:var(--muted);margin:0 0 .45rem}
+.gh-months span{width:16px;flex:none}
+.gh-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;width:max-content}
+.gh-grid i{width:13px;height:13px;border-radius:3px;background:var(--gh0);
+  transform:scale(.4);opacity:0;
+  transition:transform .4s var(--ease),opacity .4s var(--ease);transition-delay:var(--d,0s)}
+.gh-grid.in i{transform:scale(1);opacity:1}
+.gh-grid i.l1{background:var(--gh1)} .gh-grid i.l2{background:var(--gh2)}
+.gh-grid i.l3{background:var(--gh3)} .gh-grid i.l4{background:var(--gh4)}
+.gh-foot{display:flex;justify-content:space-between;align-items:center;
+  margin-top:1rem;gap:1rem;flex-wrap:wrap}
+.gh-note{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.gh-leg{display:flex;align-items:center;gap:4px;font-family:var(--mono);
+  font-size:.62rem;color:var(--muted)}
+.gh-leg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+@media (prefers-reduced-motion:reduce){ .gh-grid i{transform:none;opacity:1;transition:none} }
+
+/* ---- note & log lists ---- */
+.rows{border-top:1px solid var(--border)}
+.row{display:flex;gap:1.4rem;align-items:baseline;padding:.85rem 4px;color:var(--fg);
+  border-bottom:1px solid var(--border);text-decoration:none;transition:background .15s}
+.row:hover{background:var(--surface);text-decoration:none}
+.row .i{font-family:var(--mono);font-size:.7rem;color:var(--muted);min-width:2.2em;
+  font-variant-numeric:tabular-nums}
+.row .t{flex:1;font-family:var(--serif);font-size:1.02rem}
+.row .d{font-family:var(--mono);font-size:.7rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em}
+@media(max-width:560px){ .row .d{display:none} }
+.lc-inline{display:flex;gap:1.8rem;align-items:baseline;flex-wrap:wrap;
+  font-family:var(--mono);font-size:.78rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;margin:0 0 1rem}
+.lc-inline b{color:var(--fg);font-weight:600;font-size:1rem}
+.diffbar{display:flex;gap:2px;height:10px;border-radius:4px;overflow:hidden;
+  max-width:560px;margin:0 0 .6rem}
+.diffbar span{display:block}
+.diffbar .m{--d:.15s} .diffbar .h{--d:.3s}
+.diffbar .e{background:var(--easy)} .diffbar .m{background:var(--medium)} .diffbar .h{background:var(--hard)}
+.difflab{display:flex;gap:1.6rem;margin:0 0 2rem;font-family:var(--mono);
+  font-size:.7rem;color:var(--muted);flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4em}
 .c-easy{color:var(--easy)} .c-medium{color:var(--medium)} .c-hard{color:var(--hard)}
 
-/* solved table */
-.solved{margin:20px 0 0}
-.solved>summary{cursor:pointer;padding:11px 16px;background:var(--surface);border:1px solid var(--border);
-  border-radius:11px;font-size:.92rem;user-select:none;list-style:none}
-.solved>summary::-webkit-details-marker{display:none}
-.solved>summary::before{content:"▸ ";color:var(--muted)}
-.solved[open]>summary::before{content:"▾ "}
-.solved-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 8px}
-.solved-controls input,.solved-controls select{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
-  background:var(--surface);color:var(--fg);font-size:.9rem;font-family:inherit}
-#lc-count{color:var(--muted);font-size:.82rem;margin-left:auto}
-.solved-wrap{max-height:520px;overflow:auto;border:1px solid var(--border);border-radius:11px}
-#lc-table{border-collapse:collapse;width:100%;font-size:.9rem}
-#lc-table th{position:sticky;top:0;background:var(--bg);text-align:left;padding:9px 14px;
-  border-bottom:1px solid var(--border);font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-#lc-table td{padding:8px 14px;border-bottom:1px solid var(--border)}
-#lc-table td.num{color:var(--muted);font-family:var(--mono);width:58px}
-.paid{font-size:.7rem}
-
-/* cards */
+/* ---- write-up archive (cards + filters) ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
 .controls select,.controls input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
-  background:var(--surface);color:var(--fg);font-size:.9rem;font-family:inherit}
-.controls .count{color:var(--muted);font-size:.82rem;margin-left:auto}
+  background:var(--surface);color:var(--fg);font-size:1rem;font-family:inherit}
+.controls .count{color:var(--muted);font-size:.82rem;margin-left:auto;font-variant-numeric:tabular-nums}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin:0 0 16px;
-  transition:border-color .2s,transform .2s}
+  transition:border-color .2s}
 .card:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--border))}
 .card.flash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 .card-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -500,7 +990,7 @@ header.hero .cn{color:var(--muted);opacity:.8;font-size:1rem;margin:8px 0 0}
 .tags{margin:11px 0 0;display:flex;flex-wrap:wrap;gap:6px 12px}
 .tags span{font-size:.74rem;color:var(--muted);font-family:var(--mono)}
 .reveal-btn{margin:14px 0 0;padding:8px 16px;border:1px solid var(--border);color:var(--fg);background:var(--surface2);
-  border-radius:9px;cursor:pointer;font-size:.88rem;font-family:inherit}
+  border-radius:9px;cursor:pointer;font-size:.88rem;font-family:inherit;user-select:none}
 .reveal-btn:hover{border-color:var(--accent);color:var(--accent)}
 .body{display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:8px}
 .body.open{display:block}
@@ -514,133 +1004,31 @@ header.hero .cn{color:var(--muted);opacity:.8;font-size:1rem;margin:8px 0 0}
 .body th,.body td{border:1px solid var(--border);padding:6px 10px;text-align:left}
 .body blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--accent);color:var(--muted)}
 
-footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;border-top:1px solid var(--border)}
-@media (max-width:560px){ header.hero{padding:52px 0 24px} .block{padding:40px 0 8px} }
+/* ---- footer (black bookend) ---- */
+footer.band.dark{padding-block:clamp(3rem,6vw,5rem)}
+footer .fline{color:var(--muted);font-size:.85rem;max-width:44rem;margin:0}
+footer .fm{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
+  text-transform:uppercase;margin-top:1rem;color:var(--muted);display:flex;gap:1.4rem;flex-wrap:wrap}
+footer .fm a{color:var(--muted)}
+footer .fm a:hover{color:var(--fg);text-decoration:none}
 
-/* full-screen split hero: words + auto-advancing progress on the left, graph on the right */
-.hero2{width:100%;position:relative;display:flex;gap:0;align-items:center;height:100vh}
-.hero2-left{flex:0 0 44%;min-width:0;display:flex;flex-direction:column;justify-content:center;
-  padding:80px max(40px,4vw) 40px clamp(24px,5vw,88px)}
-.hero-name{font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,4.9vw,3.7rem);
-  line-height:1.03;letter-spacing:-.025em;margin:0 0 22px;overflow-wrap:break-word}
-.hero2-right{flex:1 1 56%;align-self:stretch;position:relative;overflow:hidden;background:#232323}
-.hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
-.hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(1.3rem,2.6vw,1.95rem);
-  line-height:1.12;letter-spacing:-.01em;margin:10px 0 16px;color:var(--muted);overflow-wrap:break-word}
-.sc-type{border-right:.06em solid var(--gold);padding-right:.04em;color:var(--gold)}
-.sc-kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);display:flex;align-items:center;gap:8px}
-.sc-kicker::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--gold)}
-.sc-blurb{font-size:1.1rem;line-height:1.6;max-width:42ch;color:var(--muted)}
-.sc-tags{margin:16px 0 0;display:flex;gap:8px 14px;flex-wrap:wrap;font-family:var(--mono);
-  font-size:.76rem;color:var(--muted)}
-.hero2-links{margin:22px 0 0;display:flex;gap:12px;flex-wrap:wrap}
-.hero2-links a{border:1px solid var(--border);background:var(--surface);color:var(--fg);
-  padding:9px 16px;border-radius:10px;font-size:.9rem}
-.hero2-links a:hover{border-color:var(--accent);text-decoration:none}
-.sc-tabs{display:flex;gap:14px;margin:36px 0 0}
-.sc-tab{flex:1 1 0;cursor:pointer;opacity:.55;transition:opacity .3s;background:none;border:none;
-  color:var(--fg);text-align:left;padding:0;font:inherit}
-.sc-tab.active{opacity:1}
-.sc-tab .tl{font-size:.86rem;margin:0 0 8px;font-weight:500}
-.sc-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
-.sc-track i{display:block;height:100%;width:0;background:var(--gold);border-radius:2px}
-@media(max-width:860px){ .hero2{flex-direction:column;height:auto;align-items:stretch}
-  .hero2-left{flex:none;width:100%;padding:78px 24px 24px} .hero2-right{flex:none;width:100%;height:60vh} }
-
-/* floating tab navigator (top-centred) */
+/* ---- floating tab navigator ---- */
 .floatnav{position:fixed;left:50%;top:11px;transform:translateX(-50%);z-index:60;display:flex;gap:4px;
-  padding:5px;background:color-mix(in srgb,var(--surface) 90%,transparent);border:1px solid var(--border);
+  padding:5px;background:color-mix(in srgb,#ffffff 90%,transparent);border:1px solid #e3ddd0;
   border-radius:999px;backdrop-filter:blur(12px);box-shadow:0 8px 26px rgba(0,0,0,.16)}
-.floatnav a{padding:7px 18px;border-radius:999px;font-size:.86rem;color:var(--muted);text-decoration:none;
+.floatnav a{padding:7px 16px;border-radius:999px;font-size:.86rem;color:#5b5a56;text-decoration:none;
   transition:background .2s,color .2s;white-space:nowrap}
-.floatnav a:hover{color:var(--fg)}
-.floatnav a.active{background:var(--fg);color:var(--bg)}
-@media(max-width:560px){ .floatnav{top:54px} .floatnav a{padding:7px 13px;font-size:.8rem}
-  .hero2-left{padding-top:100px} }
+.floatnav a:hover{color:#232323;text-decoration:none}
+.floatnav a.active{background:#232323;color:#f1eee7}
+@media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem} }
 </style>
 </head>"""
 
-HEADER = """
-  <section class="hero2" id="top">
-    <div class="hero2-left">
-      <h1 class="hero-name">Yuan-Hsuan Wen</h1>
-      <div class="sc-kicker" id="sc-kicker"></div>
-      <p class="hero2-head">I work on <span class="sc-type" id="sc-type"></span></p>
-      <p class="sc-blurb" id="sc-blurb"></p>
-      <div class="sc-tags" id="sc-tags"></div>
-      <div class="hero2-links">
-        <a href="#writeups">Write-ups</a>
-        <a href="https://leetcode.com/u/__USER__/" target="_blank" rel="noopener">LeetCode</a>
-        <a href="https://github.com/__USER__" target="_blank" rel="noopener">GitHub</a>
-      </div>
-      <div class="sc-tabs" id="sc-tabs"></div>
-    </div>
-    <div class="hero2-right">
-      <canvas id="kg"></canvas>
-      <div class="kg-hint">click to fan out · drag</div>
-      <aside class="kg-panel" id="kg-panel"></aside>
-    </div>
-  </section>"""
-
-SHOWCASE = """
-  <section class="showcase" id="focus">
-    <div class="inner">
-      <div class="sc-kicker" id="sc-kicker"></div>
-      <h2 class="sc-head">I work on <span class="sc-type" id="sc-type"></span></h2>
-      <p class="sc-blurb" id="sc-blurb"></p>
-      <div class="sc-tags" id="sc-tags"></div>
-      <a class="sc-cta" id="sc-cta" href="#graph">Explore ▸</a>
-      <div class="sc-tabs" id="sc-tabs"></div>
-    </div>
-  </section>"""
-
-GRAPH_SECTION = """
-  <section class="block" id="graph">
-    <h2>Knowledge graph</h2>
-    <p class="lede">Every topic and write-up I've made, linked together. Bigger topics = more
-      content. Click any node to fan out its neighbours and list the related write-ups; click empty
-      space to relax. Drag nodes to rearrange.</p>
-    <div class="kg-shell">
-      <canvas id="kg"></canvas>
-      <div class="kg-legend">__LEGEND__</div>
-      <div class="kg-hint">click to fan out · drag to move</div>
-      <aside class="kg-panel" id="kg-panel"></aside>
-    </div>
-  </section>"""
-
-CARDS_SECTION = """
-  <section class="block" id="writeups">
-    <h2>Deep-dive write-ups</h2>
-    <p class="lede">The problems and concepts I wrote up in full — the reasoning, not just the code.
-      <b>__NLC__</b> LeetCode · <b>__NAI__</b> AI notes.</p>
-    <div class="controls">
-      <select id="f-domain"><option value="">All domains</option>
-        <option value="leetcode">LeetCode</option><option value="ai">AI Knowledge</option></select>
-      <select id="f-diff"><option value="">All difficulty</option>
-        <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
-      <select id="f-tag"><option value="">All topics</option></select>
-      <input id="f-search" type="search" placeholder="search…" style="flex:0 1 160px">
-      <span class="count" id="c-count"></span>
-    </div>
-    <div id="grid"></div>
-  </section>"""
-
-FOOTER = """
-  <footer>Built from markdown by <code>site/build.py</code> — static, no backend, privacy-friendly
-    analytics (<a href="https://www.goatcounter.com" target="_blank" rel="noopener">GoatCounter</a>,
-    no cookies). Only <code>visibility:public</code> content is shown.</footer>
-  </div>
-
-  <nav class="floatnav" id="floatnav">
-    <a href="#top" data-sec="top">Graph</a>
-    <a href="#coverage" data-sec="coverage">LeetCode</a>
-    <a href="#writeups" data-sec="writeups">Write-ups</a>
-  </nav>"""
 
 # ---- client logic (plain JS, no interpolation) ------------------------------
 SCRIPT = r"""<script>
 const $ = id => document.getElementById(id);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---- floating tab nav: highlight the section in view ---- */
 (function(){
@@ -653,52 +1041,76 @@ const $ = id => document.getElementById(id);
   secs.forEach(s=>io.observe(s));
 })();
 
-/* ---- hero left column: typed word + auto-advancing topic with progress ---- */
+/* ---- motion system: typewriter, reveals, odometers, scrolly, gh grid ---- */
 (function(){
-  const tabsEl=$('sc-tabs'); if(!tabsEl) return;
-  const ITEMS=[
-    {kicker:'Algorithms',
-     words:['clean algorithms','the right data structure','O(1) insight'],
-     blurb:'466 LeetCode problems solved, 27 written up in full — the reasoning and trade-offs, not just the code.',
-     tags:['two-pointers','dynamic-programming','graphs','binary-search']},
-    {kicker:'AI / NLP',
-     words:['NLP from scratch','word2vec by hand','attention'],
-     blurb:'Working through Stanford CS224n by hand — embeddings, seq2seq, Transformers, minBERT — in PyTorch.',
-     tags:['pytorch','transformers','embeddings','backprop']},
-    {kicker:'Systems',
-     words:['learning in public','static tooling','clean pipelines'],
-     blurb:'A two-repo learning-in-public system with a dependency-free static-site generator and a Notion pipeline.',
-     tags:['python','static-site','automation']},
-  ];
-  const kicker=$('sc-kicker'),typeEl=$('sc-type'),blurb=$('sc-blurb'),tagsEl=$('sc-tags');
-  tabsEl.innerHTML=ITEMS.map((it,i)=>'<button class="sc-tab" data-i="'+i+'"><div class="tl">'
-    +it.kicker+'</div><div class="sc-track"><i></i></div></button>').join('');
-  const tabs=[].slice.call(tabsEl.querySelectorAll('.sc-tab'));
-  const bars=[].slice.call(tabsEl.querySelectorAll('.sc-track i'));
-  let idx=0,paused=false,prog=0,last=0;const DUR=6500;
-  function render(i){const it=ITEMS[i];
-    kicker.textContent=it.kicker; blurb.textContent=it.blurb;
-    tagsEl.innerHTML=it.tags.map(t=>'<span>#'+t+'</span>').join('');
-    tabs.forEach((t,j)=>t.classList.toggle('active',j===i)); startType(it.words);}
-  function go(i){idx=(i+ITEMS.length)%ITEMS.length; prog=0; bars.forEach(b=>b.style.width='0'); render(idx);}
-  tabs.forEach(t=>{t.onclick=()=>go(+t.dataset.i);
-    t.onmouseenter=()=>paused=true; t.onmouseleave=()=>paused=false;});
-  function tick(ts){ if(!last)last=ts; const dt=ts-last; last=ts;
-    if(!paused){ prog+=dt; bars[idx].style.width=Math.min(prog/DUR*100,100)+'%';
-      if(prog>=DUR) go(idx+1); }
-    requestAnimationFrame(tick); }
-  let tTimer=null,words=[],wi=0,ci=0,del=false;
-  function startType(w){words=w;wi=0;ci=0;del=false;clearTimeout(tTimer);typeLoop();}
-  function typeLoop(){const word=words[wi%words.length];
-    if(!del){ci++;typeEl.textContent=word.slice(0,ci);
-      if(ci>=word.length){del=true;tTimer=setTimeout(typeLoop,1500);return;}}
-    else{ci--;typeEl.textContent=word.slice(0,ci); if(ci<=0){del=false;wi++;}}
-    tTimer=setTimeout(typeLoop,del?40:75);}
-  go(0); requestAnimationFrame(tick);
+  /* typewriter kicker */
+  const typed=$('typed');
+  if(typed){
+    const phrase='LEARNING IN PUBLIC';
+    if(REDUCED){ typed.textContent=phrase; }
+    else{ let i=0; (function tick(){ typed.textContent=phrase.slice(0,i++);
+      if(i<=phrase.length) setTimeout(tick,55); })(); }
+  }
+
+  /* odometer count-up */
+  const done=new WeakSet();
+  function count(el){
+    if(done.has(el)) return; done.add(el);
+    const target=+el.dataset.n;
+    if(REDUCED){ el.textContent=target; return; }
+    const t0=performance.now(), dur=900;
+    (function step(t){ const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(target*e);
+      if(p<1) requestAnimationFrame(step); })(t0);
+  }
+
+  /* reveal on load (hero) + on scroll (everything else) */
+  const heroRv=document.querySelectorAll('.hero2 .rv');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>heroRv.forEach(el=>el.classList.add('in'))));
+  document.querySelectorAll('.hero2 .odo').forEach(el=>{
+    if(REDUCED) el.textContent=el.dataset.n; else setTimeout(()=>count(el),500); });
+  const io=new IntersectionObserver(es=>{ for(const e of es){ if(e.isIntersecting){
+    e.target.classList.add('in');
+    e.target.querySelectorAll('.odo').forEach(count);
+    io.unobserve(e.target); } } },{threshold:.2});
+  document.querySelectorAll('.band .rv, footer .rv, .diffbar, .gh-grid').forEach(el=>io.observe(el));
+  const win=$('win'); if(win) io.observe(win);
+
+  /* résumé pinned scrollytelling (sticky stage + scroll progress) */
+  const pin=$('xp');
+  if(pin){
+    const items=pin.querySelectorAll('.xp-item');
+    const rail=$('railfill');
+    const T=[0.04,0.42,0.74];
+    function xp(){
+      if(matchMedia('(max-width:900px)').matches || REDUCED){
+        items.forEach(it=>it.classList.add('on')); if(rail) rail.style.height='100%'; return; }
+      const r=pin.getBoundingClientRect();
+      const total=r.height-innerHeight;
+      const p=Math.min(1,Math.max(0,-r.top/total));
+      items.forEach((it,i)=>it.classList.toggle('on',p>=T[Math.min(i,T.length-1)]));
+      if(rail) rail.style.height=(p*100)+'%';
+    }
+    addEventListener('scroll',xp,{passive:true});
+    addEventListener('resize',xp);
+    xp();
+  }
+
+  /* github contribution grid (CONTRIB is embedded at build time) */
+  const grid=$('ghgrid');
+  if(grid && typeof CONTRIB!=='undefined' && CONTRIB && CONTRIB.levels){
+    let cells='';
+    CONTRIB.levels.forEach((l,i)=>{
+      const w=Math.floor(i/7), d=i%7;
+      cells+='<i class="l'+l+'" style="--d:'+(w*30+d*8)+'ms"></i>';
+    });
+    grid.innerHTML=cells;
+    const months=$('ghmonths');
+    if(months) months.innerHTML=CONTRIB.months.map(m=>'<span>'+m+'</span>').join('');
+  }
 })();
 
-
-/* ---- deep-dive cards ---- */
+/* ---- deep-dive cards (write-up archive) ---- */
 (function(){
   const grid=$('grid'); if(!grid) return;
   const tagSel=$('f-tag');
@@ -737,20 +1149,10 @@ const $ = id => document.getElementById(id);
     const el=$('card-'+id); if(!el) return;
     const body=el.querySelector('.body'), btn=el.querySelector('.reveal-btn');
     if(body&&!body.classList.contains('open')){body.classList.add('open'); if(btn)btn.textContent='Hide write-up';}
-    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});
     el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1200);
   };
   window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) window.expandCard(location.hash.slice(6)); });
-})();
-
-/* ---- solved-table filter ---- */
-(function(){
-  const q=$('lc-search'),d=$('lc-diff'),cnt=$('lc-count'); if(!q) return;
-  const rows=[].slice.call(document.querySelectorAll('#lc-table tbody tr'));
-  function apply(){ const s=(q.value||'').toLowerCase(),df=d.value; let n=0;
-    rows.forEach(r=>{const ok=(!df||r.dataset.d===df)&&(!s||r.dataset.t.indexOf(s)>=0);
-      r.style.display=ok?'':'none'; if(ok)n++;}); cnt.textContent=n+' / '+rows.length; }
-  q.addEventListener('input',apply); d.addEventListener('change',apply); apply();
 })();
 
 /* ---- knowledge graph (all-visible; click a node to fan out its neighbours) ---- */
@@ -759,7 +1161,6 @@ const $ = id => document.getElementById(id);
   const ctx=cv.getContext('2d'), panel=$('kg-panel');
   const MONO='#ededed';                // single monochrome node colour on black
   const colr=ci=>MONO;
-  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
   const N=GRAPH.nodes, E=GRAPH.edges;
   N.forEach((n,i)=>n._i=i);
   const adj=N.map(()=>[]); E.forEach(e=>{adj[e[0]].push(e[1]); adj[e[1]].push(e[0]);});
@@ -777,7 +1178,9 @@ const $ = id => document.getElementById(id);
     cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); reflow(); }
   new ResizeObserver(resize).observe(cv); resize();
   N.forEach((n,i)=>{ const a=i*2.399, R=Math.min(W,H)*(0.12+0.28*Math.sqrt((i%23)/23));
-    n.x=W/2+Math.cos(a)*R + (n.ci? -120:120); n.y=H/2+Math.sin(a)*R; n.vx=0; n.vy=0; });
+    n.x=W/2+Math.cos(a)*R + (n.ci? -120:120); n.y=H/2+Math.sin(a)*R; n.vx=0; n.vy=0;
+    n._b=REDUCED?0:400+i*40; });                              // staggered pop-in (DESIGN.md §7.2 #5)
+  const born=performance.now();
   const isNbr=n=>sel&&(n===sel||adj[sel._i].indexOf(n._i)>=0);
 
   function step(){
@@ -796,21 +1199,25 @@ const $ = id => document.getElementById(id);
       n.x=Math.max(n.r+4,Math.min(W-n.r-4,n.x)); n.y=Math.max(n.r+4,Math.min(H-n.r-4,n.y)); }
     if(alpha>0.25) alpha*=0.992;                               // settle, keep a little life
   }
+  function appear(n){ return Math.min(1,Math.max(0,(performance.now()-born-n._b)/350)); }
   function draw(){
     ctx.clearRect(0,0,W,H);
     for(const e of SEDGES){ const a=e[0],b=e[1], note=a.type==='note'?a:b, hot=sel&&(a===sel||b===sel);
-      ctx.strokeStyle=colr(note.ci); ctx.globalAlpha=hot?0.85:(sel?0.06:0.18); ctx.lineWidth=hot?1.6:0.9;
+      const ap=Math.min(appear(a),appear(b)); if(ap<=0) continue;
+      ctx.strokeStyle=colr(note.ci); ctx.globalAlpha=(hot?0.85:(sel?0.06:0.18))*ap; ctx.lineWidth=hot?1.6:0.9;
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
     ctx.globalAlpha=1;
     for(const n of SHOW){
+      const ap=appear(n); if(ap<=0) continue;
       const c=colr(n.ci), dim=sel&&!isNbr(n);
-      ctx.globalAlpha=dim?0.28:1;
-      ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,6.283);
+      ctx.globalAlpha=(dim?0.28:1)*ap;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*ap,0,6.283);
       if(n.type==='tag'){ ctx.fillStyle=c; ctx.fill(); }          // topics: solid
       else { ctx.fillStyle='#232323'; ctx.fill(); ctx.lineWidth=2.4; ctx.strokeStyle=c; ctx.stroke(); }  // notes: hollow ring on the charcoal graph
       ctx.globalAlpha=1;
     }
     for(const n of SHOW){                                        // labels on top
+      if(appear(n)<1) continue;
       const dim=sel&&!isNbr(n);
       // big balls (topics) always labelled; small balls (notes) only when clicked/hovered
       const show = n.type==='tag' || n===hover || isNbr(n);
@@ -824,14 +1231,16 @@ const $ = id => document.getElementById(id);
     }
     ctx.globalAlpha=1;
   }
-  function loop(){ step(); draw(); requestAnimationFrame(loop); } loop();
+  let visible=true;                                             // pause the loop off-screen
+  new IntersectionObserver(es=>{ visible=es[0].isIntersecting; },{threshold:0}).observe(cv);
+  function loop(){ if(visible && !document.hidden){ step(); draw(); } requestAnimationFrame(loop); } loop();
 
   function nodeAt(x,y){ for(let i=SHOW.length-1;i>=0;i--){const n=SHOW[i];
     if((x-n.x)**2+(y-n.y)**2<=(n.r+3)**2) return n;} return null; }
   function selectNode(n){
     sel=n; alpha=Math.max(alpha,0.9);
     const nbrs = adj[n._i].map(i=>N[i]);
-    let h='<button class="pclose" title="close">✕</button>';
+    let h='<button class="pclose" title="close" aria-label="Close panel">✕</button>';
     if(n.type==='tag'){
       h+='<div class="ph"><b>'+n.label+'</b><span>'+n.count+' write-up'+(n.count>1?'s':'')+'</span></div>';
       h+=n.items.map(it=>'<a class="pitem" data-id="'+it.id+'"><span class="pt">'+it.title+'</span>'
@@ -860,9 +1269,6 @@ const $ = id => document.getElementById(id);
       if(down.n) selectNode(down.n);
       else { sel=null; panel.classList.remove('open'); alpha=Math.max(alpha,0.6); } }
     drag=null; down=null; });
-  window.kgRecolor=function(){ document.querySelectorAll('.kg-legend i[data-ci]').forEach(el=>{
-    el.style.background=colr(+el.dataset.ci); }); };
-  window.kgRecolor();
 })();
 </script>"""
 
@@ -870,8 +1276,14 @@ const $ = id => document.getElementById(id);
 def main():
     cards = collect()
     graph = build_graph(cards)
-    OUT.write_text(page(cards, graph, load_solved()), encoding="utf-8")
-    print(f"Wrote {OUT}  ({len(cards)} cards, {len(graph['nodes'])} nodes, {len(graph['edges'])} edges)")
+    solved = load_solved()
+    contrib = load_contrib()
+    OUT.write_text(page(cards, graph, solved, contrib), encoding="utf-8")
+    n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
+    n_ai = sum(1 for c in cards if c["domain"] == "ai")
+    print(f"Wrote {OUT}  ({len(cards)} cards: {n_lc} lc + {n_ai} ai, "
+          f"{len(graph['nodes'])} nodes, {len(graph['edges'])} edges, "
+          f"contrib={'yes' if contrib else 'no'})")
 
 
 if __name__ == "__main__":
