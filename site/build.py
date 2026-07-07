@@ -345,8 +345,35 @@ HEAD = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Yuan-Hsuan Wen · Learning in Public</title>
-<meta name="description" content="A living knowledge graph of my CS / AI / LeetCode practice.">
+<title>Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups</title>
+<meta name="description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — an early-career engineer learning CS &amp; AI in public.">
+<link rel="canonical" href="https://yuan-hsuan.github.io/">
+<meta name="author" content="Yuan-Hsuan Wen">
+<meta name="theme-color" content="#f1eee7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#232323" media="(prefers-color-scheme: dark)">
+<!-- favicons -->
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<!-- Open Graph (link previews on LinkedIn / Slack / iMessage) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Yuan-Hsuan Wen">
+<meta property="og:title" content="Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups">
+<meta property="og:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
+<meta property="og:url" content="https://yuan-hsuan.github.io/">
+<meta property="og:image" content="https://yuan-hsuan.github.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Yuan-Hsuan Wen — engineer &amp; writer learning in public: LeetCode, CS224n/NLP notes, system design.">
+<!-- Twitter / X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups">
+<meta name="twitter:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
+<meta name="twitter:image" content="https://yuan-hsuan.github.io/og-image.png">
+<!-- structured data: mark this site up as a Person for Google -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Person","name":"Yuan-Hsuan Wen","url":"https://yuan-hsuan.github.io/","jobTitle":"Software Engineer","description":"Early-career software engineer learning CS & AI in public — LeetCode, CS224n/NLP, system design.","sameAs":["https://github.com/Yuan-Hsuan","https://www.linkedin.com/in/yuan-hsuan-wen/","https://leetcode.com/u/Yuan-Hsuan/"]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
