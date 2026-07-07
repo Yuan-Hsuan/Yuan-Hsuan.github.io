@@ -266,14 +266,14 @@ def build_graph(cards):
         nodes.append({"id": "note:" + c["id"], "type": "note", "label": c["label"],
                       "full": c["title"], "ci": DOM_CI.get(c["domain"], 0), "cardId": c["id"],
                       "difficulty": c["difficulty"],
-                      "r": round(7 + 7 * (c["words"] / maxw) ** 0.5, 1)})
+                      "r": round(5 + 5 * (c["words"] / maxw) ** 0.5, 1)})
     maxd = max((len(v) for v in tag_notes.values()), default=1) or 1
     for t in sorted(tag_notes):
         dom = tag_dom[t].most_common(1)[0][0]
         index["tag:" + t] = len(nodes)
         nodes.append({"id": "tag:" + t, "type": "tag", "label": t, "full": t,
                       "ci": DOM_CI.get(dom, 0), "count": len(tag_notes[t]), "items": tag_notes[t],
-                      "r": round(12 + 16 * (len(tag_notes[t]) / maxd) ** 0.7, 1)})
+                      "r": round(8 + 11 * (len(tag_notes[t]) / maxd) ** 0.7, 1)})
 
     edges = []
     for c in cards:
@@ -493,12 +493,12 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
 .hero2{width:100%;position:relative;display:flex;gap:0;align-items:center;height:100vh}
 .hero2-left{flex:0 0 44%;min-width:0;display:flex;flex-direction:column;justify-content:center;
   padding:80px max(40px,4vw) 40px clamp(24px,5vw,88px)}
-.hero-brand{position:absolute;top:22px;left:clamp(24px,5vw,88px);z-index:5;font-family:var(--serif);
-  font-weight:600;font-size:1.05rem;letter-spacing:-.01em}
+.hero-name{font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,4.9vw,3.7rem);
+  line-height:1.03;letter-spacing:-.025em;margin:0 0 22px;overflow-wrap:break-word}
 .hero2-right{flex:1 1 56%;align-self:stretch;position:relative;overflow:hidden;background:#232323}
 .hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
-.hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,5vw,3.7rem);
-  line-height:1.05;letter-spacing:-.02em;margin:14px 0 18px;overflow-wrap:break-word}
+.hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(1.3rem,2.6vw,1.95rem);
+  line-height:1.12;letter-spacing:-.01em;margin:10px 0 16px;color:var(--muted);overflow-wrap:break-word}
 .sc-type{border-right:.06em solid var(--gold);padding-right:.04em;color:var(--gold)}
 .sc-kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
   color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -535,10 +535,10 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
 
 HEADER = """
   <section class="hero2" id="top">
-    <div class="hero-brand">Yuan-Hsuan Wen</div>
     <div class="hero2-left">
+      <h1 class="hero-name">Yuan-Hsuan Wen</h1>
       <div class="sc-kicker" id="sc-kicker"></div>
-      <h1 class="hero2-head">I work on <span class="sc-type" id="sc-type"></span></h1>
+      <p class="hero2-head">I work on <span class="sc-type" id="sc-type"></span></p>
       <p class="sc-blurb" id="sc-blurb"></p>
       <div class="sc-tags" id="sc-tags"></div>
       <div class="hero2-links">
