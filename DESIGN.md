@@ -132,6 +132,15 @@ motion system (§7), not its typefaces. This decision is closed — stop re-choo
   Stacks at `≤900px`; small-phone adjustments at `≤560px`.
 - Sections carry **mono eyebrows with gold index numbers** (`01 — START HERE`: the
   numbers encode scroll order, which is real information on a single-page site).
+- **Don't default to one column** (Yuan, 2026-07-07). Sections alternate composition:
+  full-width (hero, start-here, system) vs **two-column `.split`** (`1fr 1.3fr`, stacks
+  ≤860px) — Activity (head | calendar), AI notes (head | list), Practice-log header
+  (head | stats+bar). Long vertical lists are a smell: break them into grids or splits.
+- **The write-up archive is a "shopping grid", not a stack**: compact tiles
+  (`auto-fill minmax(230px,1fr)`) showing pills/title/tags/mastery; clicking opens a
+  **reader overlay** (centered dialog, 780px, scrim + blur, Esc/scrim/✕ to close,
+  KaTeX rendered on open, deep-linkable via `#card-<id>`). Recall-then-reveal is
+  preserved — the tile shows the prompt, the overlay shows the answer.
 - Spacing: use flex/grid `gap`, not stacked margins. Section padding-block ≥ `5rem` desktop.
 - Cards: white, `border-radius 12–14px`, 1px warm border, hover = border-color shift only
   (no shadows, no lift — the page stays flat and paper-like).
@@ -292,3 +301,4 @@ never to decorate. One orchestrated hero moment; everything after is quiet.
 | 2026-07-07 | "The system" = editor-style code window showing the real visibility gate (Yuan: "學參考網站的內嵌程式碼，設計更漂亮") | ✅ decided |
 | 2026-07-07 | GitHub contribution calendar added, 20-week window, gold ramp (Yuan asked; window short因為公開更新是最近開始) | ✅ decided |
 | 2026-07-07 | Page = full-bleed cream/black band rhythm (CA structure); Experience + The system + footer on black; deep device frames inside black bands (Yuan) | ✅ decided |
+| 2026-07-07 | Two-column `.split` compositions (Activity / AI notes / log header); archive = tile grid + reader overlay, replacing stacked full-width cards (Yuan: "不要只用一欄、log 太長、像 shopping 頁面用方塊") | ✅ decided |

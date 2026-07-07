@@ -158,6 +158,14 @@ h1,h2,h3{text-wrap:balance}
   .cue{display:none}
 }
 
+/* ---- two-column section compositions (DESIGN.md §5) ---- */
+.split{display:grid;grid-template-columns:1fr 1.3fr;gap:clamp(2rem,4vw,4.5rem);align-items:start}
+.split .sec-head{margin:0}
+.loghead{margin:0 0 2.2rem;align-items:end}
+.loghead .lc-inline{margin:0 0 1rem}
+.loghead .difflab{margin:0}
+@media(max-width:860px){ .split{grid-template-columns:1fr;gap:1.6rem} }
+
 /* ---- section heads ---- */
 .sec-head{margin:0 0 2.2rem}
 .sec-head h2, .band h2{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
@@ -292,17 +300,28 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4em}
 .c-easy{color:var(--easy)} .c-medium{color:var(--medium)} .c-hard{color:var(--hard)}
 
-/* ---- write-up archive (cards + filters) ---- */
+/* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
 .controls select,.controls input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
   background:var(--surface);color:var(--fg);font-size:1rem;font-family:inherit}
 .controls .count{color:var(--muted);font-size:.82rem;margin-left:auto;font-variant-numeric:tabular-nums}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin:0 0 16px;
-  transition:border-color .2s}
-.card:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--border))}
-.card.flash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
-.card-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.card h3{font-family:var(--serif);font-weight:500;margin:0;font-size:1.2rem;flex:1 1 auto;letter-spacing:-.01em}
+.tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:1.1rem 1.2rem 1rem;display:flex;flex-direction:column;gap:.6rem;cursor:pointer;
+  user-select:none;transition:border-color .15s;animation:tileIn .45s var(--ease) both;
+  animation-delay:var(--d,0s)}
+@keyframes tileIn{from{opacity:0;transform:translateY(10px)}}
+.tile:hover{border-color:var(--gold)}
+.tile:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
+.tile .t-top{display:flex;gap:6px;flex-wrap:wrap}
+.tile h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.05rem;line-height:1.35;flex:1}
+.tile .tags{margin:0}
+.tile .t-foot{font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.65rem;margin-top:auto}
+.tile .t-foot .go{color:var(--fg)}
+.tile .t-foot .go::after{content:"→";display:inline-block;margin-left:.35em;transition:transform .15s var(--ease)}
+@media(hover:hover){ .tile:hover .t-foot .go::after{transform:translateX(4px)} }
+@media (prefers-reduced-motion:reduce){ .tile{animation:none} }
 .pill{font-size:.7rem;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--muted);
   text-transform:capitalize}
 .pill.diff-easy{color:var(--easy);border-color:color-mix(in srgb,var(--easy) 55%,transparent)}
@@ -312,20 +331,37 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .pill.domain.ai{background:var(--ai)}
 .tags{margin:11px 0 0;display:flex;flex-wrap:wrap;gap:6px 12px}
 .tags span{font-size:.74rem;color:var(--muted);font-family:var(--mono)}
-.reveal-btn{margin:14px 0 0;padding:8px 16px;border:1px solid var(--border);color:var(--fg);background:var(--surface2);
-  border-radius:9px;cursor:pointer;font-size:.88rem;font-family:inherit;user-select:none}
-.reveal-btn:hover{border-color:var(--accent);color:var(--accent)}
-.body{display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:8px}
-.body.open{display:block}
-.body h3,.body h4,.body h5{font-family:var(--serif);font-weight:500;letter-spacing:-.01em}
-.body pre{background:var(--bg);border:1px solid var(--border);padding:14px 16px;border-radius:10px;overflow-x:auto}
-.body code{font-family:var(--mono);font-size:.86em}
-.body pre code{font-size:.82rem}
-.body .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0}   /* long equations scroll in-card, not the page */
-.body img{max-width:100%;height:auto}
-.body table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem;display:block;overflow-x:auto}
-.body th,.body td{border:1px solid var(--border);padding:6px 10px;text-align:left}
-.body blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--accent);color:var(--muted)}
+
+/* reader overlay (the "product page" for a write-up) */
+.reader{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  padding:clamp(12px,3vw,32px)}
+.reader[hidden]{display:none}
+.reader-scrim{position:absolute;inset:0;background:rgba(20,19,17,.55);backdrop-filter:blur(3px)}
+.reader-panel{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:16px;
+  width:min(780px,100%);max-height:min(88svh,900px);display:flex;flex-direction:column;
+  box-shadow:0 30px 80px rgba(0,0,0,.35);animation:readerIn .22s var(--ease)}
+@keyframes readerIn{from{opacity:0;transform:scale(.97) translateY(8px)}}
+@media (prefers-reduced-motion:reduce){ .reader-panel{animation:none} }
+.reader-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+  padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+.reader-head h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.35rem;letter-spacing:-.01em;
+  flex:1 1 100%;padding-right:2rem}
+.reader-pills{display:flex;gap:6px;flex-wrap:wrap}
+.r-close{position:absolute;right:14px;top:14px;background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:.95rem;line-height:1}
+.r-close:hover{color:var(--fg);border-color:var(--fg)}
+.r-close:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
+.rbody{overflow:auto;padding:8px 22px 24px;overscroll-behavior:contain}
+body.lock{overflow:hidden}
+.rbody h3,.rbody h4,.rbody h5{font-family:var(--serif);font-weight:500;letter-spacing:-.01em}
+.rbody pre{background:var(--surface2);border:1px solid var(--border);padding:14px 16px;border-radius:10px;overflow-x:auto}
+.rbody code{font-family:var(--mono);font-size:.86em}
+.rbody pre code{font-size:.82rem}
+.rbody .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0}   /* long equations scroll in-panel, not the page */
+.rbody img{max-width:100%;height:auto}
+.rbody table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem;display:block;overflow-x:auto}
+.rbody th,.rbody td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+.rbody blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--accent);color:var(--muted)}
 
 /* ---- footer (black bookend) ---- */
 footer.band.dark{padding-block:clamp(3rem,6vw,5rem)}
@@ -416,21 +452,21 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
     </div>
   </section>
   <section class="band" id="activity">
-    <div class="wrap">
+    <div class="wrap wide split">
       <div class="sec-head rv">
         <p class="kicker"><span class="idx">03</span><span>Activity</span></p>
         <h2>Showing up, in public.</h2>
         <p>Every gold square is a commit to this log or its notes — pulled from GitHub at build time.</p>
+        <p class="gh-note">Started logging publicly in spring 2026 — the streak is young on purpose.</p>
       </div>
       <div class="gh rv">
         <div class="gh-head">
-          <a class="gh-title" href="https://github.com/Yuan-Hsuan" target="_blank" rel="noopener">github.com/Yuan-Hsuan — contributions</a>
+          <a class="gh-title" href="https://github.com/Yuan-Hsuan" target="_blank" rel="noopener">github.com/Yuan-Hsuan</a>
           <span class="gh-title">Last 20 weeks</span>
         </div>
         <div class="gh-months" id="ghmonths" aria-hidden="true"></div>
         <div class="gh-grid" id="ghgrid" role="img" aria-label="GitHub contribution calendar, last 20 weeks"></div>
         <div class="gh-foot">
-          <span class="gh-note">Started logging publicly in spring 2026 — the streak is young on purpose.</span>
           <span class="gh-leg">Less
             <i style="background:var(--gh0)"></i><i style="background:var(--gh1)"></i><i style="background:var(--gh2)"></i><i style="background:var(--gh3)"></i><i style="background:var(--gh4)"></i>
           More</span>
@@ -484,7 +520,7 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
     </div>
   </section>
   <section class="band" id="ai">
-    <div class="wrap">
+    <div class="wrap wide split">
       <div class="sec-head rv">
         <p class="kicker"><span class="idx">05</span><span>AI notes</span></p>
         <h2>Stanford CS224n, worked through by hand.</h2>
@@ -494,15 +530,17 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
     </div>
   </section>
   <section class="band" id="log">
-    <div class="wrap">
-      <div class="sec-head rv">
-        <p class="kicker"><span class="idx">06</span><span>Practice log</span></p>
-        <h2>The daily reps.</h2>
-        <p>466 solved is just volume — the 26 write-ups are the point: pattern, trade-offs,
-        and a recall prompt for spaced repetition.</p>
-      </div>
-      <div class="lc-inline rv"><span><b>466</b> solved</span><span><b>26</b> write-ups</span>
-        <a href="https://leetcode.com/u/Yuan-Hsuan/" target="_blank" rel="noopener">leetcode.com/u/Yuan-Hsuan ↗</a></div>
+    <div class="wrap wide">
+      <div class="split loghead">
+        <div class="sec-head rv">
+          <p class="kicker"><span class="idx">06</span><span>Practice log</span></p>
+          <h2>The daily reps.</h2>
+          <p>466 solved is just volume — the 26 write-ups are the point: pattern, trade-offs,
+          and a recall prompt for spaced repetition. Click a card to read.</p>
+        </div>
+        <div class="rv">
+          <div class="lc-inline"><span><b>466</b> solved</span><span><b>26</b> write-ups</span>
+            <a href="https://leetcode.com/u/Yuan-Hsuan/" target="_blank" rel="noopener">leetcode.com/u/Yuan-Hsuan ↗</a></div>
       <div class="diffbar" role="img" aria-label="Difficulty split: 113 easy, 285 medium, 68 hard">
         <span class="e" style="flex:113"></span><span class="m" style="flex:285"></span><span class="h" style="flex:68"></span>
       </div>
@@ -510,6 +548,8 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
         <span><span class="dot" style="background:var(--easy)"></span>Easy 113</span>
         <span><span class="dot" style="background:var(--medium)"></span>Medium 285</span>
         <span><span class="dot" style="background:var(--hard)"></span>Hard 68</span>
+      </div>
+        </div>
       </div>
       <div class="controls rv">
         <select id="f-domain" aria-label="Filter by domain"><option value="">All domains</option>
@@ -520,9 +560,21 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
         <input id="f-search" type="search" placeholder="search…" style="flex:0 1 180px" aria-label="Search write-ups">
         <span class="count" id="c-count"></span>
       </div>
-      <div id="grid"></div>
+      <div id="grid" class="tilegrid"></div>
     </div>
   </section>
+
+  <div class="reader" id="reader" hidden>
+    <div class="reader-scrim" id="reader-scrim"></div>
+    <article class="reader-panel" role="dialog" aria-modal="true" aria-labelledby="reader-title">
+      <header class="reader-head">
+        <h3 id="reader-title"></h3>
+        <div class="reader-pills" id="reader-pills"></div>
+        <button class="r-close" id="reader-close" aria-label="Close">✕</button>
+      </header>
+      <div class="rbody" id="reader-body"></div>
+    </article>
+  </div>
   <footer class="band dark">
     <div class="wrap rv">
       <p class="fline">Built from markdown by <code>site/build.py</code> — static, no backend,
@@ -634,33 +686,28 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 })();
 
-/* ---- deep-dive cards (write-up archive) ---- */
+/* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
 (function(){
   const grid=$('grid'); if(!grid) return;
   const tagSel=$('f-tag');
   TAGS.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
   const diffPill=d=>d?'<span class="pill diff-'+d+'">'+d+'</span>':'';
-  const domLabel=d=>d==='ai'?'AI':'LeetCode';
-  function cardHTML(c,i){
-    return '<article class="card" id="card-'+c.id+'">'
-      +'<div class="card-top"><h3>'+c.title+'</h3>'
-      +'<span class="pill domain'+(c.domain==='ai'?' ai':'')+'">'+domLabel(c.domain)+'</span>'
-      +diffPill(c.difficulty)+'<span class="pill">mastery '+c.mastery+'/5</span></div>'
-      +'<div class="tags">'+c.tags.map(t=>'<span>#'+t+'</span>').join('')+'</div>'
-      +'<button class="reveal-btn" data-i="'+i+'">Reveal write-up</button>'
-      +'<div class="body" id="body-'+c.id+'">'+c.body_html+'</div></article>';
+  const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(d==='ai'?'AI':'LeetCode')+'</span>';
+  function tileHTML(c,i){
+    return '<article class="tile" id="card-'+c.id+'" data-id="'+c.id+'" tabindex="0" role="button" '
+      +'aria-haspopup="dialog" style="--d:'+((i%12)*40)+'ms">'
+      +'<div class="t-top">'+domPill(c.domain)+diffPill(c.difficulty)+'</div>'
+      +'<h3>'+c.title+'</h3>'
+      +'<div class="tags">'+c.tags.slice(0,3).map(t=>'<span>#'+t+'</span>').join('')+'</div>'
+      +'<div class="t-foot"><span>mastery '+c.mastery+'/5</span><span class="go">Read</span></div></article>';
   }
-  function renderMath(){ if(window.renderMathInElement) renderMathInElement(grid,{delimiters:[
-    {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false}); }
-  window.addEventListener('load',renderMath);
   function draw(list){
-    grid.innerHTML=list.map(cardHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
+    grid.innerHTML=list.map(tileHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
     $('c-count').textContent=list.length+' / '+CARDS.length;
-    grid.querySelectorAll('.reveal-btn').forEach(b=>b.onclick=()=>{
-      const body=grid.querySelectorAll('.card')[b.dataset.i].querySelector('.body');
-      const open=body.classList.toggle('open'); b.textContent=open?'Hide write-up':'Reveal write-up';
+    grid.querySelectorAll('.tile').forEach(el=>{
+      el.onclick=()=>openReader(el.dataset.id);
+      el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openReader(el.dataset.id); } };
     });
-    renderMath();
   }
   function apply(){
     const d=$('f-domain').value,diff=$('f-diff').value,tag=$('f-tag').value,q=$('f-search').value.toLowerCase();
@@ -669,14 +716,34 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
   ['f-domain','f-diff','f-tag','f-search'].forEach(id=>$(id).addEventListener('input',apply));
   draw(CARDS);
-  window.expandCard=function(id){
-    const el=$('card-'+id); if(!el) return;
-    const body=el.querySelector('.body'), btn=el.querySelector('.reveal-btn');
-    if(body&&!body.classList.contains('open')){body.classList.add('open'); if(btn)btn.textContent='Hide write-up';}
-    el.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'center'});
-    el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1200);
-  };
-  window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) window.expandCard(location.hash.slice(6)); });
+
+  /* reader overlay */
+  const reader=$('reader'), rTitle=$('reader-title'), rPills=$('reader-pills'),
+        rBody=$('reader-body'), rClose=$('reader-close'), rScrim=$('reader-scrim');
+  let lastFocus=null;
+  function openReader(id){
+    const c=CARDS.find(x=>x.id===id); if(!c||!reader) return;
+    lastFocus=document.activeElement;
+    rTitle.textContent=c.title;
+    rPills.innerHTML=domPill(c.domain)+diffPill(c.difficulty)+'<span class="pill">mastery '+c.mastery+'/5</span>';
+    rBody.innerHTML=c.body_html; rBody.scrollTop=0;
+    reader.hidden=false; document.body.classList.add('lock');
+    if(window.renderMathInElement) renderMathInElement(rBody,{delimiters:[
+      {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+    history.replaceState(null,'','#card-'+id);
+    rClose.focus();
+  }
+  function closeReader(){
+    if(reader.hidden) return;
+    reader.hidden=true; document.body.classList.remove('lock');
+    history.replaceState(null,'',location.pathname+location.search);
+    if(lastFocus&&lastFocus.focus) lastFocus.focus();
+  }
+  rClose.onclick=closeReader;
+  rScrim.onclick=closeReader;
+  addEventListener('keydown',e=>{ if(e.key==='Escape') closeReader(); });
+  window.expandCard=openReader;   // graph panel + curated picks land here
+  window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) openReader(location.hash.slice(6)); });
 })();
 
 /* ---- knowledge graph (all-visible; click a node to fan out its neighbours) ---- */
