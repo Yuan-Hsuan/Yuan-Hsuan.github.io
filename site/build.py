@@ -20,6 +20,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import shutil
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -30,6 +31,26 @@ GITHUB_USER = "Yuan-Hsuan"
 OUT = ROOT / "index.html"
 
 WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")             # [[note]] links, Obsidian-style
+
+# ---- external AI notes (single source of truth: the CS224n study repo) -------
+# The notes live in the sibling repo; we read them at build time so the site is
+# never a stale copy — edit the note there, re-run build.py, done. (Images are
+# copied into ROOT/imgs so GitHub Pages can serve them.)
+CS224N_NOTES = ROOT.parent / "Standford-cs224n-nlp" / "notes" / "concepts"
+CS224N_SOURCE = "https://web.stanford.edu/class/cs224n/"
+CS224N_META = {
+    "01-word-embeddings.md":        dict(id="ai-word-embeddings", title="Word Embeddings (one-hot → dense)",
+        tags=["nlp", "embeddings", "word-vectors"], difficulty="easy", mastery=3),
+    "02-count-based-svd.md":        dict(id="ai-count-svd", title="Count-Based Word Vectors (SVD)",
+        tags=["nlp", "svd", "co-occurrence", "embeddings", "linear-algebra"], difficulty="medium", mastery=3),
+    "03-word2vec-and-glove.md":     dict(id="ai-word2vec-glove", title="word2vec & GloVe",
+        tags=["nlp", "word2vec", "glove", "embeddings", "negative-sampling"], difficulty="medium", mastery=3),
+    "04-neural-nets-ner.md":        dict(id="ai-neural-nets-ner", title="Neural Nets: NER & Non-linearities",
+        tags=["nlp", "neural-networks", "ner", "non-linearities"], difficulty="medium", mastery=2),
+    "05-backprop-matrix-calculus.md": dict(id="ai-backprop", title="Backprop & Matrix Calculus",
+        tags=["neural-networks", "backpropagation", "gradients", "matrix-calculus", "deep-learning"],
+        difficulty="medium", mastery=2),
+}
 
 
 # ---- frontmatter parsing ----------------------------------------------------
@@ -58,9 +79,25 @@ def _inline(s: str) -> str:
     s = html.escape(s, quote=False)
     s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)                    # `code`
     s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)          # **bold**
+    s = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)",                            # ![alt](img)
+               r'<img src="\2" alt="\1" style="max-width:100%;border-radius:8px;margin:10px 0">', s)
     s = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)",
                r'<a href="\2" target="_blank" rel="noopener">\1</a>', s)  # [t](url)
     return s
+
+
+def render_body(md: str) -> str:
+    """Markdown → HTML, protecting LaTeX math ($…$ / $$…$$) from the markdown pass so KaTeX
+    (auto-render, loaded in <head>) can typeset it in the browser."""
+    math = []
+    def stash(m):
+        math.append(m.group(0)); return f"@@MATH{len(math)-1}@@"
+    md = re.sub(r"\$\$.*?\$\$", stash, md, flags=re.S)                 # display math
+    md = re.sub(r"\$[^$\n]+?\$", stash, md)                            # inline math
+    out = md_to_html(md)
+    for i, m in enumerate(math):
+        out = out.replace(f"@@MATH{i}@@", m)
+    return out
 
 
 def md_to_html(md: str) -> str:
@@ -154,8 +191,36 @@ def collect():
                 "mastery": int(meta.get("mastery", 0) or 0),
                 "words": len(re.sub(r"```.*?```", " ", body, flags=re.S).split()),
                 "related": related,
-                "body_html": md_to_html(body),
+                "body_html": render_body(body),
             })
+    cards.extend(external_ai_cards())
+    return cards
+
+
+def external_ai_cards():
+    """Read the CS224n notes from the sibling repo at build time (single source of
+    truth) and turn each into an AI card. Returns [] if the repo isn't next door."""
+    if not CS224N_NOTES.exists():
+        return []
+    (ROOT / "imgs").mkdir(exist_ok=True)                          # copy note images for Pages
+    for img in (CS224N_NOTES / "imgs").glob("*.png"):
+        shutil.copy(img, ROOT / "imgs" / img.name)
+    cards = []
+    for fname, m in CS224N_META.items():
+        path = CS224N_NOTES / fname
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        parts = text.split("\n---\n", 2)                         # drop title + header + Contents
+        body = parts[2].strip() if len(parts) >= 3 else re.sub(r"^#.*\n", "", text, count=1).strip()
+        body = WIKILINK.sub(r"\1", body)                          # strip [[ ]] the site can't resolve
+        cards.append({
+            "id": m["id"], "domain": "ai", "title": m["title"],
+            "label": short_label("ai", m["title"]), "tags": m["tags"],
+            "difficulty": m["difficulty"], "mastery": m["mastery"],
+            "words": len(re.sub(r"```.*?```", " ", body, flags=re.S).split()),
+            "related": [], "source": CS224N_SOURCE, "body_html": render_body(body),
+        })
     return cards
 
 
@@ -241,20 +306,8 @@ def solved_html(solved):
         return ""
     c = solved.get("counts", {})
     user = solved.get("username", GITHUB_USER)
-    rows = []
-    for p in solved.get("problems", []):
-        diff = p.get("difficulty", "")
-        title = html.escape(p.get("title", ""), quote=True)
-        slug = p.get("slug", "")
-        paid = ' <span class="paid">🔒</span>' if p.get("paid") else ""
-        search = html.escape(f'{title} {p.get("id","")}'.lower(), quote=True)
-        rows.append(
-            f'<tr data-d="{diff}" data-t="{search}"><td class="num">{p.get("id","")}</td>'
-            f'<td><a href="https://leetcode.com/problems/{slug}/" target="_blank" rel="noopener">{title}</a>{paid}</td>'
-            f'<td><span class="pill diff-{diff}">{diff}</span></td></tr>'
-        )
     return f"""
-  <section class="block">
+  <section class="block" id="coverage">
     <h2>LeetCode coverage</h2>
     <p class="lede"><b>{c.get('total',0)}</b> problems solved on
       <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">leetcode.com/u/{user}</a>.
@@ -265,20 +318,6 @@ def solved_html(solved):
       <div class="tile"><b class="c-medium">{c.get('medium',0)}</b><span>Medium</span></div>
       <div class="tile"><b class="c-hard">{c.get('hard',0)}</b><span>Hard</span></div>
     </div>
-    <details class="solved">
-      <summary>Show all {c.get('total',0)} solved problems</summary>
-      <div class="solved-controls">
-        <input id="lc-search" type="search" placeholder="search title / number…">
-        <select id="lc-diff"><option value="">All difficulty</option>
-          <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
-        <span id="lc-count"></span>
-      </div>
-      <div class="solved-wrap"><table id="lc-table">
-        <thead><tr><th>#</th><th>Problem</th><th>Difficulty</th></tr></thead>
-        <tbody>
-{chr(10).join(rows)}
-        </tbody></table></div>
-    </details>
   </section>"""
 
 
@@ -311,6 +350,9 @@ HEAD = """<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <style>
 :root{  /* cream site (contentarchitecture #feature) + black graph */
   --bg:#f1eee7; --surface:#ffffff; --surface2:#f5f1e8; --border:#e3ddd0;
@@ -321,7 +363,7 @@ HEAD = """<!doctype html>
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.65;
   -webkit-font-smoothing:antialiased;}
 a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
@@ -349,7 +391,8 @@ header.hero .cn{color:var(--muted);opacity:.8;font-size:1rem;margin:8px 0 0}
 .hero-links a:hover{border-color:var(--accent);text-decoration:none}
 
 /* section shell */
-.block{padding:52px 0 8px}
+.block{padding:52px 0 8px;scroll-margin-top:72px}
+.hero2{scroll-margin-top:0}
 .block h2{font-family:var(--serif);font-weight:500;font-size:1.9rem;letter-spacing:-.01em;margin:0 0 6px}
 .lede{color:var(--muted);margin:0 0 22px;max-width:56ch}
 
@@ -437,6 +480,8 @@ header.hero .cn{color:var(--muted);opacity:.8;font-size:1rem;margin:8px 0 0}
 .body pre{background:var(--bg);border:1px solid var(--border);padding:14px 16px;border-radius:10px;overflow-x:auto}
 .body code{font-family:var(--mono);font-size:.86em}
 .body pre code{font-size:.82rem}
+.body .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0}   /* long equations scroll in-card, not the page */
+.body img{max-width:100%;height:auto}
 .body table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem;display:block;overflow-x:auto}
 .body th,.body td{border:1px solid var(--border);padding:6px 10px;text-align:left}
 .body blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--accent);color:var(--muted)}
@@ -445,13 +490,13 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
 @media (max-width:560px){ header.hero{padding:52px 0 24px} .block{padding:40px 0 8px} }
 
 /* full-screen split hero: words + auto-advancing progress on the left, graph on the right */
-.hero2{width:100vw;margin-left:calc(50% - 50vw);display:flex;gap:0;align-items:center;height:100vh}
-.hero2-left{flex:0 0 44%;display:flex;flex-direction:column;justify-content:center;
+.hero2{width:100%;display:flex;gap:0;align-items:center;height:100vh}
+.hero2-left{flex:0 0 44%;min-width:0;display:flex;flex-direction:column;justify-content:center;
   padding:80px max(40px,4vw) 40px clamp(24px,5vw,88px)}
-.hero2-right{flex:1 1 56%;align-self:stretch;position:relative;overflow:hidden;background:#232323;border-radius:18px 0 0 18px}
+.hero2-right{flex:1 1 56%;align-self:stretch;position:relative;overflow:hidden;background:#232323}
 .hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
-.hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(2.3rem,4.6vw,3.7rem);
-  line-height:1.05;letter-spacing:-.02em;margin:14px 0 18px}
+.hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,5vw,3.7rem);
+  line-height:1.05;letter-spacing:-.02em;margin:14px 0 18px;overflow-wrap:break-word}
 .sc-type{border-right:.06em solid var(--gold);padding-right:.04em;color:var(--gold)}
 .sc-kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
   color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -470,17 +515,23 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
 .sc-tab .tl{font-size:.86rem;margin:0 0 8px;font-weight:500}
 .sc-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
 .sc-track i{display:block;height:100%;width:0;background:var(--gold);border-radius:2px}
-@media(max-width:860px){ .hero2{flex-direction:column;height:auto}
-  .hero2-left{flex:none;padding:80px 24px 20px} .hero2-right{flex:none;height:64vh;border-radius:18px} }
+@media(max-width:860px){ .hero2{flex-direction:column;height:auto;align-items:stretch}
+  .hero2-left{flex:none;width:100%;padding:78px 24px 24px} .hero2-right{flex:none;width:100%;height:60vh} }
+
+/* floating tab navigator (top-centred) */
+.floatnav{position:fixed;left:50%;top:11px;transform:translateX(-50%);z-index:60;display:flex;gap:4px;
+  padding:5px;background:color-mix(in srgb,var(--surface) 90%,transparent);border:1px solid var(--border);
+  border-radius:999px;backdrop-filter:blur(12px);box-shadow:0 8px 26px rgba(0,0,0,.16)}
+.floatnav a{padding:7px 18px;border-radius:999px;font-size:.86rem;color:var(--muted);text-decoration:none;
+  transition:background .2s,color .2s;white-space:nowrap}
+.floatnav a:hover{color:var(--fg)}
+.floatnav a.active{background:var(--fg);color:var(--bg)}
+@media(max-width:560px){ .floatnav{top:60px} .floatnav a{padding:7px 13px;font-size:.8rem} }
 </style>
 </head>"""
 
 HEADER = """  <div class="top"><div class="wrap">
     <span class="brand">Yuan-Hsuan Wen</span>
-    <nav>
-      <a href="#writeups">Write-ups</a><a href="#coverage">LeetCode</a>
-      <a href="https://github.com/__USER__" target="_blank" rel="noopener">GitHub ↗</a>
-    </nav>
   </div></div>
 
   <section class="hero2" id="top">
@@ -549,11 +600,28 @@ CARDS_SECTION = """
 FOOTER = """
   <footer>Built from markdown by <code>site/build.py</code> — static, no backend, no tracking.
     Only <code>visibility:public</code> content is shown.</footer>
-  </div>"""
+  </div>
+
+  <nav class="floatnav" id="floatnav">
+    <a href="#top" data-sec="top">Graph</a>
+    <a href="#coverage" data-sec="coverage">LeetCode</a>
+    <a href="#writeups" data-sec="writeups">Write-ups</a>
+  </nav>"""
 
 # ---- client logic (plain JS, no interpolation) ------------------------------
 SCRIPT = r"""<script>
 const $ = id => document.getElementById(id);
+
+/* ---- floating tab nav: highlight the section in view ---- */
+(function(){
+  const nav=$('floatnav'); if(!nav) return;
+  const links=[].slice.call(nav.querySelectorAll('a'));
+  const secs=links.map(a=>$(a.dataset.sec)).filter(Boolean);
+  const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){
+    links.forEach(a=>a.classList.toggle('active',a.dataset.sec===e.target.id)); } }); },
+    {rootMargin:'-45% 0px -45% 0px'});
+  secs.forEach(s=>io.observe(s));
+})();
 
 /* ---- hero left column: typed word + auto-advancing topic with progress ---- */
 (function(){
@@ -616,6 +684,9 @@ const $ = id => document.getElementById(id);
       +'<button class="reveal-btn" data-i="'+i+'">Reveal write-up</button>'
       +'<div class="body" id="body-'+c.id+'">'+c.body_html+'</div></article>';
   }
+  function renderMath(){ if(window.renderMathInElement) renderMathInElement(grid,{delimiters:[
+    {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false}); }
+  window.addEventListener('load',renderMath);
   function draw(list){
     grid.innerHTML=list.map(cardHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
     $('c-count').textContent=list.length+' / '+CARDS.length;
@@ -623,6 +694,7 @@ const $ = id => document.getElementById(id);
       const body=grid.querySelectorAll('.card')[b.dataset.i].querySelector('.body');
       const open=body.classList.toggle('open'); b.textContent=open?'Hide write-up':'Reveal write-up';
     });
+    renderMath();
   }
   function apply(){
     const d=$('f-domain').value,diff=$('f-diff').value,tag=$('f-tag').value,q=$('f-search').value.toLowerCase();
@@ -638,6 +710,7 @@ const $ = id => document.getElementById(id);
     el.scrollIntoView({behavior:'smooth',block:'center'});
     el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1200);
   };
+  window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) window.expandCard(location.hash.slice(6)); });
 })();
 
 /* ---- solved-table filter ---- */
