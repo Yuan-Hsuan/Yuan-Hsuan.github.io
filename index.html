@@ -148,9 +148,11 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
 @media (max-width:560px){ header.hero{padding:52px 0 24px} .block{padding:40px 0 8px} }
 
 /* full-screen split hero: words + auto-advancing progress on the left, graph on the right */
-.hero2{width:100%;display:flex;gap:0;align-items:center;height:100vh}
+.hero2{width:100%;position:relative;display:flex;gap:0;align-items:center;height:100vh}
 .hero2-left{flex:0 0 44%;min-width:0;display:flex;flex-direction:column;justify-content:center;
   padding:80px max(40px,4vw) 40px clamp(24px,5vw,88px)}
+.hero-brand{position:absolute;top:22px;left:clamp(24px,5vw,88px);z-index:5;font-family:var(--serif);
+  font-weight:600;font-size:1.05rem;letter-spacing:-.01em}
 .hero2-right{flex:1 1 56%;align-self:stretch;position:relative;overflow:hidden;background:#232323}
 .hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
 .hero2-head{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,5vw,3.7rem);
@@ -184,15 +186,14 @@ footer{color:var(--muted);font-size:.85rem;padding:40px 0 60px;margin-top:40px;b
   transition:background .2s,color .2s;white-space:nowrap}
 .floatnav a:hover{color:var(--fg)}
 .floatnav a.active{background:var(--fg);color:var(--bg)}
-@media(max-width:560px){ .floatnav{top:60px} .floatnav a{padding:7px 13px;font-size:.8rem} }
+@media(max-width:560px){ .floatnav{top:54px} .floatnav a{padding:7px 13px;font-size:.8rem}
+  .hero2-left{padding-top:100px} }
 </style>
 </head>
 <body>
-  <div class="top"><div class="wrap">
-    <span class="brand">Yuan-Hsuan Wen</span>
-  </div></div>
 
   <section class="hero2" id="top">
+    <div class="hero-brand">Yuan-Hsuan Wen</div>
     <div class="hero2-left">
       <div class="sc-kicker" id="sc-kicker"></div>
       <h1 class="hero2-head">I work on <span class="sc-type" id="sc-type"></span></h1>
@@ -380,8 +381,16 @@ const $ = id => document.getElementById(id);
   const adj=N.map(()=>[]); E.forEach(e=>{adj[e[0]].push(e[1]); adj[e[1]].push(e[0]);});
   const edgeObjs=E.map(e=>[N[e[0]],N[e[1]]]);
   let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2),alpha=1,hover=null,sel=null,drag=null,down=null;
+  const deg=N.map((n,i)=>adj[i].length);
+  const rank=N.map((n,i)=>i).sort((a,b)=>deg[b]-deg[a]);      // most-connected first
+  let SHOW=N.slice(), SEDGES=edgeObjs.slice();
+  function reflow(){                                          // show fewer dots on a smaller graph
+    const cap = W<480?20 : W<720?34 : W<1000?52 : N.length;
+    const keep=new Set(rank.slice(0,Math.min(cap,N.length)));
+    SHOW=N.filter(n=>keep.has(n._i));
+    SEDGES=edgeObjs.filter(e=>keep.has(e[0]._i)&&keep.has(e[1]._i)); alpha=1; }
   function resize(){ const r=cv.getBoundingClientRect(); W=r.width; H=r.height;
-    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); reflow(); }
   new ResizeObserver(resize).observe(cv); resize();
   N.forEach((n,i)=>{ const a=i*2.399, R=Math.min(W,H)*(0.12+0.28*Math.sqrt((i%23)/23));
     n.x=W/2+Math.cos(a)*R + (n.ci? -120:120); n.y=H/2+Math.sin(a)*R; n.vx=0; n.vy=0; });
@@ -389,15 +398,15 @@ const $ = id => document.getElementById(id);
 
   function step(){
     const cx=W/2,cy=H/2;
-    for(const n of N){ n.vx+=(cx-n.x)*0.004; n.vy+=(cy-n.y)*0.004; }
-    for(let i=0;i<N.length;i++)for(let j=i+1;j<N.length;j++){
-      const a=N[i],b=N[j]; let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||.01,d=Math.sqrt(d2);
+    for(const n of SHOW){ n.vx+=(cx-n.x)*0.004; n.vy+=(cy-n.y)*0.004; }
+    for(let i=0;i<SHOW.length;i++)for(let j=i+1;j<SHOW.length;j++){
+      const a=SHOW[i],b=SHOW[j]; let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||.01,d=Math.sqrt(d2);
       let f=Math.min((a.r*b.r*11)/d2,40); a.vx+=dx/d*f; a.vy+=dy/d*f; b.vx-=dx/d*f; b.vy-=dy/d*f; }
-    for(const e of edgeObjs){ const a=e[0],b=e[1];
+    for(const e of SEDGES){ const a=e[0],b=e[1];
       const spread=sel&&(a===sel||b===sel)?95:0;               // fan neighbours of selected out
       let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||.01;
       let k=(d-(a.r+b.r+40+spread))*0.02; a.vx+=dx/d*k; a.vy+=dy/d*k; b.vx-=dx/d*k; b.vy-=dy/d*k; }
-    for(const n of N){ if(n===drag)continue;
+    for(const n of SHOW){ if(n===drag)continue;
       n.vx=Math.max(-8,Math.min(8,n.vx*0.9)); n.vy=Math.max(-8,Math.min(8,n.vy*0.9));
       n.x+=n.vx*alpha; n.y+=n.vy*alpha;
       n.x=Math.max(n.r+4,Math.min(W-n.r-4,n.x)); n.y=Math.max(n.r+4,Math.min(H-n.r-4,n.y)); }
@@ -405,11 +414,11 @@ const $ = id => document.getElementById(id);
   }
   function draw(){
     ctx.clearRect(0,0,W,H);
-    for(const e of edgeObjs){ const a=e[0],b=e[1], note=a.type==='note'?a:b, hot=sel&&(a===sel||b===sel);
+    for(const e of SEDGES){ const a=e[0],b=e[1], note=a.type==='note'?a:b, hot=sel&&(a===sel||b===sel);
       ctx.strokeStyle=colr(note.ci); ctx.globalAlpha=hot?0.85:(sel?0.06:0.18); ctx.lineWidth=hot?1.6:0.9;
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
     ctx.globalAlpha=1;
-    for(const n of N){
+    for(const n of SHOW){
       const c=colr(n.ci), dim=sel&&!isNbr(n);
       ctx.globalAlpha=dim?0.28:1;
       ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,6.283);
@@ -417,7 +426,7 @@ const $ = id => document.getElementById(id);
       else { ctx.fillStyle='#232323'; ctx.fill(); ctx.lineWidth=2.4; ctx.strokeStyle=c; ctx.stroke(); }  // notes: hollow ring on the charcoal graph
       ctx.globalAlpha=1;
     }
-    for(const n of N){                                          // labels on top
+    for(const n of SHOW){                                        // labels on top
       const dim=sel&&!isNbr(n);
       // big balls (topics) always labelled; small balls (notes) only when clicked/hovered
       const show = n.type==='tag' || n===hover || isNbr(n);
@@ -433,7 +442,7 @@ const $ = id => document.getElementById(id);
   }
   function loop(){ step(); draw(); requestAnimationFrame(loop); } loop();
 
-  function nodeAt(x,y){ for(let i=N.length-1;i>=0;i--){const n=N[i];
+  function nodeAt(x,y){ for(let i=SHOW.length-1;i>=0;i--){const n=SHOW[i];
     if((x-n.x)**2+(y-n.y)**2<=(n.r+3)**2) return n;} return null; }
   function selectNode(n){
     sel=n; alpha=Math.max(alpha,0.9);
