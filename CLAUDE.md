@@ -3,9 +3,32 @@
 Public "learning in public" site. GitHub Pages serves the committed `index.html`,
 which is generated — **never hand-edit it**.
 
-> Personal habits & design taste are inherited from `../CLAUDE.md`.
+> Personal habits & decision style are inherited from `../CLAUDE.md`.
 > **The visual/design contract is `DESIGN.md` — read it before any change.**
 > Its §2 principles, §9 scaling playbook, and the rejected-ideas list are binding.
+
+## Her visual taste（美感守則 — 這個網站的判準）
+
+- Warm paper ground + near-black ink + **ONE gold accent moment per viewport**; serif
+  display + mono for all metadata/numbers (`tabular-nums`); wide layouts (~1680px) with
+  varied compositions — never uniform single-column stacks; a long vertical list is a smell.
+- **Two materials:** square = instrument/data (may carry crop-mark corner ticks placed
+  OUTSIDE the boundary); round = controls only. Never both on one block.
+- **Text motion = typewriter only.** Rejected: decode/glitch text, marquees, emoji
+  decoration, gradient-hero SaaS clichés, dark mode (single cream theme, always).
+- **Real data or nothing** — fake/sample content in a UI gets called out. If real data is
+  unavailable, hide the section instead.
+- **Few words.** She deletes self-explaining copy on sight ("好多餘").
+
+## Blind spots to quietly cover on this site（默默補位）
+
+- **Mobile / a11y / reduced-motion:** she never asks — own that layer silently in every
+  change (fallbacks for the pinned scrolly, keyboard paths, focus rings, static variants).
+- **Public-exposure safety:** she moves fast; before anything ships, verify no contact
+  info, employer internals, or `mind/` content reaches public output, and that public
+  claims match her résumé/BQ material (`../mind/`).
+- **Design outrunning content:** when she reaches for another visual tweak while the
+  contribution streak or note count is thin, gently point the effort back to writing.
 
 ## The one-file architecture
 
