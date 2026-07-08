@@ -800,13 +800,11 @@ FOOTER = f"""
   <div class="progress" aria-hidden="true"><i id="prog"></i></div>
   <nav class="floatnav" id="floatnav" aria-label="Sections">
     <a class="fn-brand" href="#top">Yuan-Hsuan Wen</a>
-    <span class="fn-div" aria-hidden="true"></span>
     <a href="#top" data-sec="top">Graph</a>
     <a href="#start" data-sec="start">Start</a>
     <a href="#xp" data-sec="xp">Résumé</a>
     <a href="#ai" data-sec="ai">Notes</a>
     <a href="#log" data-sec="log">Log</a>
-    <span class="fn-div" aria-hidden="true"></span>
     <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
     <a class="ext" href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
   </nav>"""
@@ -839,7 +837,7 @@ HEAD = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups</title>
+<title>Yuan-Hsuan Wen — The reasoning, not just the code.</title>
 <meta name="description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — an early-career engineer learning CS &amp; AI in public.">
 <link rel="canonical" href="https://yuan-hsuan.github.io/">
 <meta name="author" content="Yuan-Hsuan Wen">
@@ -851,7 +849,7 @@ HEAD = """<!doctype html>
 <!-- Open Graph (link previews on LinkedIn / Slack / iMessage) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Yuan-Hsuan Wen">
-<meta property="og:title" content="Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups">
+<meta property="og:title" content="Yuan-Hsuan Wen — The reasoning, not just the code.">
 <meta property="og:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
 <meta property="og:url" content="https://yuan-hsuan.github.io/">
 <meta property="og:image" content="https://yuan-hsuan.github.io/og-image.png">
@@ -860,7 +858,7 @@ HEAD = """<!doctype html>
 <meta property="og:image:alt" content="Yuan-Hsuan Wen — engineer &amp; writer learning in public: LeetCode, CS224n/NLP notes, system design.">
 <!-- Twitter / X card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Yuan-Hsuan Wen — Software Engineer · CS/AI Notes &amp; LeetCode Write-ups">
+<meta name="twitter:title" content="Yuan-Hsuan Wen — The reasoning, not just the code.">
 <meta name="twitter:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
 <meta name="twitter:image" content="https://yuan-hsuan.github.io/og-image.png">
 <!-- structured data: mark this site up as a Person for Google -->
@@ -943,8 +941,8 @@ h1,h2,h3{text-wrap:balance}
 .hero2{min-height:100svh;display:flex;align-items:stretch;position:relative}
 .hero2-left{flex:0 0 47%;min-width:0;display:flex;flex-direction:column;justify-content:center;
   gap:1.5rem;padding:clamp(24px,5vw,72px)}
-.hero2 h1{font-family:var(--mono);font-weight:600;
-  font-size:clamp(1.9rem,3.3vw,3rem);line-height:1.18;letter-spacing:-.03em;margin:0}
+.hero2 h1{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
+  font-size:clamp(2.3rem,4.2vw,3.7rem);line-height:1.1;letter-spacing:-.01em;margin:0}
 .hero2 h1 em{font-style:italic;font-weight:600;
   background:linear-gradient(transparent 70%,color-mix(in srgb,var(--gold) 42%,transparent) 70%)}
 .hero-sub{color:var(--muted);max-width:34rem;margin:0;font-size:1.05rem}
@@ -1288,10 +1286,9 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
 .floatnav .fn-brand{font-family:var(--serif);font-weight:600;font-size:.95rem;
   letter-spacing:-.01em;color:#232323;padding:7px 10px 7px 15px}
 .floatnav .fn-brand:hover{color:#232323}
-.floatnav .fn-div{width:1px;background:#e3ddd0;margin:5px 3px}
 .floatnav .ext{color:#8a8378}
 @media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem}
-  .floatnav .ext,.floatnav .fn-div,.floatnav .fn-brand{display:none} }
+  .floatnav .ext,.floatnav .fn-brand{display:none} }
 
 /* ---- digital instrument layer (數位感): dot grid, HUD corners, scan, decode ---- */
 body{background-image:radial-gradient(color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px);
