@@ -1,314 +1,244 @@
-# DESIGN.md — Site Design Guideline（網站設計準則）
+# DESIGN.md — Site Design Contract（網站設計契約）
 
-> **Single source of truth for how the site looks, reads, and behaves.**
-> The CSS itself lives in `site/build.py` (HEAD template) — this file is the *contract* behind it.
-> Rule of the house: **Decided once. Committed.** 每個視覺決策在這裡定案一次，之後不再每次重想。
->
-> Reference / inspiration: [contentarchitecture.dev](https://www.contentarchitecture.dev/) —
-> we already share its ground palette (`#f1eee7 / #232323 / #5b5a56`); what we borrow from it
-> going forward is the **typographic system and the copy discipline**, not just colors.
+> Single source of truth for how the site looks, reads, behaves, and **grows**.
+> The implementation lives in `site/build.py` (one file: template + CSS + JS + data pipeline);
+> this file is the contract behind it. House rule: **Decided once. Committed.**
+> 每個視覺決策在這裡定案一次，之後不再重想。
 
----
-
-## 0. Change process（改版流程）
-
-1. Propose the change **in this file first** (edit the token / rule, note it in §9 Decision log).
-2. Get Yuan's OK on anything visual (colors, layout, fonts) — never silently restyle the live site.
-3. Then implement in `site/build.py`, run `python3 site/build.py`, eyeball `index.html`, commit.
+**Change process:** propose here first (edit the rule, add a §11 log line) → Yuan approves
+anything visual → implement in `build.py` → `python3 site/build.py` → eyeball `index.html`
+→ commit/push only when Yuan says so.
 
 ---
 
-## 1. Purpose & audience（這個網站是給誰看的）
+## 1. Identity & audience
 
-The page has **one job**: let a recruiter or engineer decide in **60 seconds** that
-Yuan is (a) actually coding, (b) able to explain reasoning clearly, (c) still improving.
+One-line thesis (tab title, OG title): **"The reasoning, not just the code."**
 
-Two readers, two speeds:
+The page has one job — let a reader decide in 60 seconds that Yuan is (a) actually coding,
+(b) able to explain reasoning clearly, (c) still improving.
 
-| Reader | Time | What they must get |
+| Reader | Time | Must get |
 |---|---|---|
-| Recruiter / HR | ~60 s | Hero thesis + numbers + proof it's current ("updated 2026-07") |
-| Engineer / interviewer | ~10 min | 2–3 curated write-ups showing real reasoning + the build system itself |
+| Recruiter / HR | ~60 s | hero + typewriter + stats → Résumé (02) → LinkedIn CTA |
+| Engineer / interviewer | ~10 min | Start here (01) → the editor (04) → a few write-ups |
 
-Everything on the page must serve one of these two. If a section serves neither, cut it.
+Every section serves one of these two readers, or it gets cut.
 
-## 2. Positioning & voice（定位與文案原則）
+## 2. Principles（違反任何一條前先來改這份文件）
 
-- **One committed thesis, not a rotating slideshow.** The hero states a single line the
-  reader cannot miss. Current thesis: **"The reasoning, not just the code."**
-  (Rotating/typewriter showcases hide 2/3 of the message from a 10-second visitor.)
-- **Evidence over claims.** Never "passionate about algorithms" — always the number and
-  the artifact: "466 solved, 31 written up in full."
-- **Numbers must agree everywhere.** One constant in `build.py` feeds hero, coverage,
-  and cards. (Bug class we already hit: hero said 27, write-ups lede said 26.)
-- **Show recency.** Learning-in-public credibility = the log is *alive*. The page carries
-  a "last updated" stamp and surfaces the most recent write-ups.
-- **Honesty is the brand.** Mastery self-ratings, mistakes, and "what I got wrong first"
-  stay visible. That is the differentiator, not a weakness.
-- Copy style: short plain sentences, everyday words, specific beats clever.
-  (Same rule as the résumé/BQ material.)
+1. **Show, don't tell.** The site demonstrates instead of describing: the editor shows the
+   real generator source; the calendar shows real GitHub counts; the globe shows the real
+   note graph. Sample/fake data is never acceptable — if the real data isn't available,
+   the section hides itself.
+2. **Few words = confidence.** One sentence per section lede. No self-explanations
+   (the "No PDF on purpose" line died for this). Evidence and numbers over adjectives.
+3. **Two materials.** Square = instrument (data blocks, cards, calendar, editor, bars —
+   `border-radius: 0`, may carry crop marks). Round = control (buttons, pills, inputs,
+   the pill navigator, kg side panel). Never mix: a block with corner ticks is never rounded.
+4. **One text-motion language: the typewriter.** Type → hold → delete → next. No decode/
+   glitch/scramble effects (tried, rejected: "好奇怪"). No marquees (tried, rejected).
+5. **One accent moment per viewport.** Gold is for the focal point (typed word, rail,
+   ticks, ping); everything around it stays quiet warm-grey.
+6. **Honesty is the brand.** Mastery self-ratings (reader overlay only), the young streak
+   caption, mistakes in write-ups — they stay. Never inflate numbers; they all come from
+   one computed source and cannot drift.
+7. **Zero dependencies.** Python stdlib generator; vanilla JS; the only external requests
+   are Google Fonts, KaTeX, GoatCounter. Every new asset must justify itself.
 
-## 3. Color tokens（顏色）
-
-Warm paper ground + near-black ink; the **knowledge-graph panel is the one dark, bold
-element** on the page. Everything else stays quiet.
+## 3. Tokens
 
 | Token | Value | Role |
 |---|---|---|
-| `--bg` | `#f1eee7` | page ground (warm off-white) |
-| `--surface` | `#ffffff` | cards |
-| `--surface2` | `#f5f1e8` | insets, code blocks |
-| `--border` | `#e3ddd0` | hairlines (warm, never pure grey) |
+| `--bg` | `#f1eee7` | page ground — warm off-white, **single theme, no dark mode** |
+| `--surface` / `--surface2` | `#ffffff` / `#f5f1e8` | inputs, insets |
+| `--border` | `#e3ddd0` | hairlines（永遠是暖色，不用純灰） |
 | `--fg` | `#232323` | ink |
-| `--muted` | `#5b5a56` | secondary text (warm grey) |
-| `--accent` | `#40392e` | links, dark accents |
-| `--gold` | `#d6a878` | highlight (typed word, bars, kicker dot) |
-| panel | `#232323` | knowledge-graph canvas ground |
-| difficulty | `#8a8a8a → #5b5a56 → #232323` | Easy → Medium → Hard, one greyscale ramp (never green/orange/red) |
+| `--muted` | `#5b5a56` | secondary text |
+| `--accent` | `#40392e` | links, hovers |
+| `--gold` | `#d6a878` | THE accent: typed word, ticks, rail, ping, progress |
+| `--panel` | `#232323` | dark surfaces: graph, xp band, editor window, footer |
+| `--easy/--medium/--hard` | `#8a8a8a/#5b5a56/#232323` | difficulty = one greyscale ramp |
+| `--gh0…--gh4` | `#e7e0d1→#8f6132` | contribution ramp (gold sequential) |
+| syntax | gold keywords · `#a8b78c` strings · `#79746a` comments · `#e8d5b5` defs | editor panes |
+| `--ease` | `cubic-bezier(.4,0,.2,1)` | every transition |
 
-**Decided 2026-07-07 (Yuan):** keep `#d6a878` gold. No hot-orange accent.
+Fonts — decided, stop re-choosing: **Fraunces** (display: h1/h2/h3, card titles, brand),
+**Inter** + PingFang/Noto TC (body), **JetBrains Mono** (all metadata: kickers, labels,
+numbers `tabular-nums`, code, readouts). Mono is the voice of data; body text never mono.
 
-**Decided 2026-07-07 (Yuan):** the site is **single-theme: clean warm off-white `#f1eee7`,
-always**. No dark mode (`meta color-scheme: light`); the only dark surfaces are the graph
-panel and the code window, by design.
+## 4. Layout — the band rhythm
 
-**GitHub contribution ramp** (gold sequential, on `--surface`):
-`#e7e0d1 → #eeddc2 → #dfb98a → #c08a4d → #8f6132` (empty → most active).
+Full-bleed bands, cream/black alternation; content in `.wrap` (1080px) / `.wrap.wide`
+(1680px). Hero is the only 100svh split (text 47% | graph canvas).
 
-Rules:
-- **One accent moment per viewport.** If two things compete for attention, demote one.
-- Difficulty is an *ordinal* scale → one ramp, light→dark. Never traffic-light colors.
-- Semantic/status colors (if ever needed) are separate from the accent and never decorative.
-
-## 4. Typography（字體系統）
-
-| Role | Face | Usage |
+| Band | Ground | Composition |
 |---|---|---|
-| Display / headings | `Fraunces` (serif) | h1–h3, card titles, brand |
-| Body | `Inter` + `"PingFang TC","Noto Sans TC"` | paragraphs, UI |
-| Utility / data | `JetBrains Mono` | kickers, tags, numbers, code |
+| Hero | cream + black | split; kicker · serif h1 typewriter · sub · split stats (AI first) · 3 actions |
+| 01 Start here | cream | **3 black article columns left + head right** (head first on mobile) |
+| 02 Experience | **black** | pinned scrolly: intro column left · **zigzag timeline** on center rail |
+| 03 Activity | cream | split: head left · calendar + click-detail panel right |
+| 04 The system | cream | full-width editor (dark window on cream) |
+| 05 AI notes | cream | split: head left · numbered rows right |
+| 06 Practice log | cream | split header · filter controls · tile grid + reader overlay |
+| Footer | **black** | honesty line + links (bookend to the hero's black) |
 
-Rules (the part we adopt from contentarchitecture.dev):
-- **Mono is the voice of metadata.** Every kicker/eyebrow/label/stat is mono,
-  UPPERCASE, `letter-spacing: .06–.08em`, muted color. Body text never is.
-- **Numbers are always mono + `font-variant-numeric: tabular-nums`** so stats align.
-- Headline scale via `clamp()`; h1 tracking tight (`-0.02` to `-0.03em`); body `line-height ≥ 1.6`.
-- Running text measure ≤ ~70ch (`--wrap: 880px` handles this).
-- Headings get `text-wrap: balance`.
-- CJK fallbacks stay in every stack (content is bilingual EN/中文).
+Composition rules: never two consecutive sections with the same shape; long vertical
+lists are a smell — break into grids/splits; sections carry mono eyebrows with gold
+index numbers (scroll order = real information).
 
-**Decided 2026-07-07 (Yuan):** keep Fraunces/Inter/JetBrains Mono. The warmth *is* the
-brand; what we adopt from contentarchitecture.dev is the mono-metadata discipline and the
-motion system (§7), not its typefaces. This decision is closed — stop re-choosing fonts.
+## 5. Components (spec by section)
 
-## 5. Layout & spacing（版面）
+- **Floating pill navigator**: serif brand "Yuan-Hsuan Wen" · section links (active =
+  ink pill) · GitHub/LinkedIn external links. No dividers. Brand + externals hidden ≤640px.
+- **Scroll progress**: 2px gold meter fixed at the very top.
+- **Hero typewriter**: h1 "I work on `<word>`" — whole line Fraunces; typed word gold with
+  block cursor; words: clean algorithms / the right data structure / NLP from scratch /
+  AI infrastructure / learning in public.
+- **Knowledge globe** (the signature — protect it): fibonacci-sphere layout, slow idle
+  rotation, drag/touch to rotate, depth-scaled monochrome dots (topics solid, notes
+  smaller), labels: topics always (depth-faded), notes when front-facing, hover/click
+  focuses node + neighbours and dims the rest; click opens the side panel → `expandCard`.
+  Mono HUD readout bottom-right: real node/edge counts. Pauses off-screen.
+- **Black article blocks** (`.cardk`): gold mono meta · serif title · why-line ·
+  tags + Read →; permanent crop marks (dim → gold on hover).
+- **Experience**: 320vh+ scroll track, sticky stage; left = kicker/h2/pitch quote
+  (gold-bordered serif italic)/LinkedIn CTA/one-line education; right = zigzag items on a
+  center gold rail with dots, activated by scroll progress thresholds (computed from item
+  count). Timeline = work only, newest first, "Currently" entry on top. Education is never
+  a timeline item. Fallback to static single column ≤900px wide or ≤600px tall or
+  reduced-motion.
+- **Contribution calendar**: window = `CONTRIB_WEEKS` (6 for now) **anchored to today —
+  trim only the front for Sunday alignment, never the tail** (bug we shipped once);
+  +2 future weeks as dashed cells; 20px square cells, gold ramp; hover tooltip with real
+  count ("7 contributions · Jul 4"); **click a day → detail panel on the right** listing
+  per-repo commits/events from the public Events API (private repos structurally absent).
+- **The editor**: mac-frame dark window in a deep `.crop` frame; file tree (role=tablist)
+  switches 6 REAL files read at build time — two write-ups, an AI note, SCHEMA.md,
+  build.py (reading itself, first 150 lines), generated index.html head. Real line
+  numbers, palette-family syntax colors, line-by-line reveal, blinking cursor, scanline
+  sweep. Pane height `clamp(300px, 58svh, 720px)`.
+- **Tile grid + reader**: shopping-grid tiles (pills · serif title · ≤3 tags · "~N words" ·
+  Read →); crop marks on hover; click → reader overlay (780px dialog, scrim+blur, Esc/
+  scrim/✕, focus restore, KaTeX on open, `#card-<id>` deep links). **Mastery appears only
+  inside the reader** — it is spaced-repetition metadata, not a public ability label.
+- **Crop marks / HUD**: `.cardk/.tile` ticks sit OUTSIDE the boundary (inset −6px);
+  `.crop` = always-on dim gold (dark frames); `.hud` = inside viewfinder corners, only on
+  the hero graph (overflow-safe). Blocks with marks are always square (§2.3).
 
-- **The page is a rhythm of full-bleed color bands** (the contentarchitecture.dev
-  structure — decided 2026-07-07 after Yuan flagged "只有封面滿版很奇怪"):
-  every section is a full-width band, cream `#f1eee7` or black `#232323`, alternating;
-  content inside is a centered `max-width: 1200px` wrap. Band order:
+## 6. Motion inventory（僅此清單；新增動效 = 新決策）
 
-  | Band | Ground |
-  |---|---|
-  | Hero (split: text + graph canvas) | cream / black |
-  | 01 Start here | cream |
-  | 02 Experience (pinned scrollytelling) | **black** |
-  | 03 Activity (GitHub calendar) | cream |
-  | 04 The system (code window) | **black** |
-  | 05 AI notes · 06 Practice log | cream |
-  | Footer | **black** (bookend) |
+1. Hero load stagger (kicker→h1→sub→stats odometers→buttons, <1.5s, once)
+2. h1 typewriter loop (72ms type / 38ms delete / 1.7s hold) + block cursor blink
+3. Kicker type-in on first reveal (52ms/char, starts 300ms after the fade)
+4. Status ping on "Updated YYYY-MM"
+5. Hero scroll cue ↓ (steps(7), hidden ≤900px)
+6. Scroll reveals `.rv` (fade + 14px rise, .6s, once, `--d` stagger)
+7. Odometer count-ups (900ms ease-out, on reveal)
+8. Difficulty bar scaleX grow (staggered E→M→H)
+9. Tile-in animation on grid render/filter (40ms stagger, capped)
+10. Globe: idle rotation + birth fade-in + hover/drag physics
+11. Editor line reveal per pane switch + scanline sweep (7s loop)
+12. Calendar wave-in (col×30ms + row×8ms) + tooltip (.12s)
+13. Hover micro-interactions ≤200ms: borders, arrow nudges, row surfaces, cell outline
 
-- **Dark-band token re-scope**: `.band.dark` redefines the tokens
-  (`--ink:#f1eee7; --muted:#a8a49c; --border:#413e37; --surface:#2a2823`), so all
-  components restyle themselves — never hand-color inside a dark band. Primary buttons
-  invert (cream bg, ink text, gold hover). Gold reads brighter on black — use it for
-  dates/hooks/rail there.
-- **Deep device frame** (inside black bands, the CA nested-frame move): outer frame
-  `#141311`, `radius 18px`, `1px ring rgba(255,255,255,.09)`, large soft shadow; inner
-  window `#232323` with `ring white/8`. Black-on-black layering via rings, not borders.
-- Band padding-block `clamp(4rem, 9vw, 8.5rem)` — generous, CA-scale. Adjacent same-color
-  bands get a hairline separator; color changes need none.
-- **Hero = 100svh split**: left text column (~47%), right black graph canvas.
-  Stacks at `≤900px`; small-phone adjustments at `≤560px`.
-- Sections carry **mono eyebrows with gold index numbers** (`01 — START HERE`: the
-  numbers encode scroll order, which is real information on a single-page site).
-- **Don't default to one column** (Yuan, 2026-07-07). Sections alternate composition:
-  full-width (hero, start-here, system) vs **two-column `.split`** (`1fr 1.3fr`, stacks
-  ≤860px) — Activity (head | calendar), AI notes (head | list), Practice-log header
-  (head | stats+bar). Long vertical lists are a smell: break them into grids or splits.
-- **The write-up archive is a "shopping grid", not a stack**: compact tiles
-  (`auto-fill minmax(230px,1fr)`) showing pills/title/tags/mastery; clicking opens a
-  **reader overlay** (centered dialog, 780px, scrim + blur, Esc/scrim/✕ to close,
-  KaTeX rendered on open, deep-linkable via `#card-<id>`). Recall-then-reveal is
-  preserved — the tile shows the prompt, the overlay shows the answer.
-- Spacing: use flex/grid `gap`, not stacked margins. Section padding-block ≥ `5rem` desktop.
-- Cards: white, `border-radius 12–14px`, 1px warm border, hover = border-color shift only
-  (no shadows, no lift — the page stays flat and paper-like).
-- Page must never scroll horizontally; wide tables/code get their own `overflow-x:auto`.
+Rules: reveals are once-only; nothing loops except cursor, ping, cue, scanline, globe;
+`prefers-reduced-motion` disables everything (content fully visible, final values,
+static globe); rAF loops pause when off-screen/hidden.
 
-## 6. Components（元件規格）
+## 7. Data pipelines（真資料原則的實作面）
 
-- **Kicker / eyebrow**: mono, uppercase, muted, with gold dot or index number.
-- **Hero thesis**: one h1 + one supporting paragraph + stat strip + ≤3 actions
-  (primary = internal "Start here", secondary = GitHub / LeetCode, ghost style).
-- **Hero stat strip — AI and LeetCode are separate groups**, divided by a vertical
-  hairline, each with its own mono uppercase group label (`AI / CS224N` first, then
-  `LEETCODE`). Never mix the two domains' numbers in one flat row.
-- **Stat tiles**: big mono number (tabular-nums) + small mono label. No borders heavier
-  than cards. A tile is *not* a chart — no decoration.
-- **GitHub contribution calendar**: 20-week window (not 52 — the public streak is young;
-  widen the window as history accumulates), 13px cells, 3px gap, gold sequential ramp
-  (§3), month labels on top, `Less→More` legend, honest caption ("started logging
-  publicly in spring 2026"). Production data: GitHub GraphQL contributions API at build
-  time, cached into `site/`. Cells reveal in a left-to-right wave on scroll into view.
-- **Code window ("The system")**: the CA "this is the actual repo" move, upgraded — a
-  mac-style editor frame on `--panel` dark: title bar (3 muted dots + mono filename),
-  left pane = file tree of the two-repo system (`mind/ 🔒 private` visible), right pane =
-  the *real* `collect()` visibility-gate snippet from `build.py`, line numbers, syntax
-  colors from the palette family only (gold keywords, warm-green strings, warm-grey
-  comments), the two gate lines highlighted, blinking cursor on the last line. Lines fade
-  in one-by-one on first reveal.
-- **LeetCode is presented modestly.** Coverage numbers + difficulty bar + write-up list
-  live together in ONE compact "Practice log" section near the bottom; copy frames volume
-  as reps ("466 solved is just volume — the write-ups are the point"). LeetCode never
-  gets more visual weight than the AI notes or Experience. AI notes get their own
-  separate section listing all 5.
-- **Difficulty bar** (coverage): single stacked proportion bar, greyscale ramp,
-  2px gaps between segments, direct labels with dot markers (`Easy 113 · Medium 285 · Hard 68`).
-  Never a pie chart.
-- **Write-up cards**: serif title, domain pill (LeetCode olive / AI tan), difficulty pill,
-  mastery `N/5`, tags, "Reveal write-up" (recall-then-reveal stays — it's pedagogically
-  on-brand). Deep-linkable via `#card-<id>`.
-- **Curated "Start here" row**: exactly **3** hand-picked write-ups with one line each on
-  *why this one* ("read this to see how I reason about invariants"). Curation = judgment signal.
-- **Knowledge graph**: monochrome dots on `#232323`; notes = hollow rings, topics = solid
-  discs; click fans out + opens side panel. This is the site's signature — protect it,
-  don't add colors to it.
-- **The System section**: one section that treats the site itself as an engineering
-  project — two-repo diagram (`mind/` private → `visibility:public` gate → `build.py` →
-  static `index.html`; Notion → Coding Report → `leetcode/`), in a mono code-style panel.
-  This is the "This is the actual repo" move.
-- **Résumé / Experience section** (web-native, **no PDF by design**):
-  - Placement: section `02`, right after "Start here" — recruiters reach it in one scroll.
-  - Opens with the positioning line as a serif italic pull-quote with gold left border:
-    *"I don't want to train the models — I want to build the engine that makes them fast
-    and reliable."*
-  - Body: **timeline rows** (`grid: 170px 1fr`, hairline-separated) — mono date column left;
-    right column = serif company name, mono uppercase role line, 2–3 bullets max.
-  - Bullet grammar: action + constraint + **quantified result in bold ink**; muted body text.
-    One serif-italic "hook" sentence allowed per entry (personality, per BQ-hook rule),
-    e.g. *"I couldn't scale the hardware, so I shrank the problem."*
-  - Content source: `mind/resume/resume.md` → future `visibility: public` extract; until the
-    pipeline exists, hand-maintain the section in `build.py`. Public version carries **no
-    email/phone/address**; exact dates can stay coarse (years + duration).
-  - CTA row: `Full history on LinkedIn ↗` (primary) + the mono note
-    *"No PDF here on purpose — this page is the résumé, and it's always current."*
-  - ⚠️ Employer content check: keep NVIDIA/Broadcom bullets at the same altitude as the
-    public LinkedIn profile — no internal tool names or unreleased product details.
-- **Floating nav**: pill bar, IntersectionObserver highlights active section.
-- **Footer**: the honesty line (static, no backend, GoatCounter cookieless,
-  only `visibility:public` renders) + last-build timestamp.
+| Data | Source | Freshness | Failure mode |
+|---|---|---|---|
+| Write-ups | `leetcode/**/*.md` frontmatter+body | every build | `visibility != public` never renders (SAFETY BELT in `collect()`) |
+| AI notes | sibling repo `Standford-cs224n-nlp/notes/concepts/` via `CS224N_META` | every build | skipped if repo absent |
+| Solved counts | `site/solved.json` (`build_solved.py` ← LeetCode API) | manual refresh | hero/log fall back to 0 |
+| Contributions | github.com/users/…/contributions (scraped levels + tooltip counts) | every build | cache `site/contrib.json` → else section hides |
+| Day details | api.github.com events (public only) | every build | cache `site/activity.json` → else "no public details" |
+| Editor panes | the repo's own files, incl. `build.py` reading itself | every build | missing file → tab skipped |
+| Résumé | `EXPERIENCE` const, condensed from `mind/resume/resume.md` (private) | manual | no contact info ever renders publicly |
 
-## 7. Motion（動態系統）— v1, adopted from contentarchitecture.dev's grammar
+**Numbers single-source rule:** every stat on the page is computed in `page()`/builders
+from these sources. Never hand-type a count into copy.
 
-Philosophy: motion exists to say **"this log is alive"** and to sequence attention —
-never to decorate. One orchestrated hero moment; everything after is quiet.
+## 8. Accessibility & performance checklist
 
-### 7.1 Timing tokens
+- Focus-visible rings (box-shadow, respects shape) on buttons/tiles/rows/tree tabs/close.
+- Reader overlay: `role=dialog`, Esc + scrim close, focus restored to opener.
+- Tiles keyboard-operable (`role=button`, Enter/Space); tree is a `tablist`.
+- Inputs ≥16px font (iOS zoom); hover effects wrapped in `@media (hover:hover)`.
+- Canvas globe has the write-up lists as its text alternative; HUD readout is text.
+- Keep `index.html` under ~400 KB (now ~260 KB). Budget breakers → see §9.
+- Keep: OG card, JSON-LD Person, sitemap, robots, canonical, GoatCounter (cookieless).
 
-| Token | Value | Used for |
-|---|---|---|
-| `--ease` | `cubic-bezier(.4,0,.2,1)` | every transition/reveal |
-| micro | `.15s` | hover states (border, background, arrow nudge) |
-| reveal | `.6s` | scroll/load fade-and-rise |
-| grow | `.8s` | difficulty-bar scaleX |
-| count | `900ms`, ease-out cubic | odometer number count-up |
-| stagger | `60–150ms` between siblings | cards, tiles, rows, hero blocks |
+## 9. Scaling playbook（內容變多/要改進時，照這裡做）
 
-### 7.2 The inventory（全部動態，僅此清單）
+**Write-ups 26 → 50+**
+- Tile grid + filters hold fine to ~100 tiles; add a "show more" fold after ~48 if the
+  section gets taller than ~3 viewports.
+- `index.html` grows with embedded `body_html`. Past the 400 KB budget: emit card bodies
+  to `site/cards.json` and fetch once when the reader first opens (keeps zero-framework).
+- Past ~50 notes, consider per-note pages (`/notes/<id>.html`) generated by the same
+  build for SEO/permalinks; tiles keep the overlay, search engines get real URLs.
+- Globe: node cap by canvas width already exists; if labels crowd, raise the note-label
+  depth threshold (currently `pz > 0.3`) before touching sizes.
 
-1. **Hero load sequence** (the one orchestrated moment, total < 1.5s):
-   kicker (0s) → h1 (.15s) → sub (.3s) → stat strip (.45s, numbers **odometer count up**)
-   → action buttons (.6s). Each = fade + `translateY(14px→0)`.
-2. **Typewriter kicker**: "LEARNING IN PUBLIC" types at ~55ms/char, then the gold block
-   cursor keeps blinking (`steps(1,end)`, .9s). This replaces the old rotating 3-scene
-   showcase — the typewriter survives, the carousel does not.
-3. **Status ping**: gold dot next to "Updated YYYY-MM" pulses outward
-   (`ping 1.8s cubic-bezier(0,0,.2,1) infinite`, scale 2.4 → fade). The recency signal.
-4. **Scroll cue**: `↓` at hero bottom, `steps(7)` drift-down loop (CA's heroScrollCue).
-   Hidden on mobile; optionally hidden after first scroll.
-5. **Graph pop-in**: nodes appear staggered (~60ms apart, radius grows 350ms), links fade
-   in after both endpoints exist; then permanent gentle idle drift (sin/cos, ±2px).
-   Pause rAF when tab hidden. Click/drag physics unchanged.
-6. **Scroll reveals**: every section header, card, tile, timeline row and list row gets
-   fade + rise via one `IntersectionObserver` (`threshold: .2`), fire **once**, staggered
-   via `--d` custom property. No re-animation on scroll-up.
-7. **Odometer on scroll**: coverage tiles count up when the tile scrolls into view.
-8. **Difficulty bar grow**: segments `scaleX(0→1)`, origin left, staggered E→M→H.
-9. **Hover micro-interactions**: card border → gold + "Read →" arrow nudges 4px;
-   list rows get surface background; buttons shift border/background. `.15s` each.
-10. **Résumé pinned scrollytelling** (the Experience section): the section is a tall
-    scroll track (~320vh) with a `position: sticky; top: 0` full-viewport stage. Left
-    column (headline + pitch quote + CTA) stays fixed; right column's timeline entries
-    start at `opacity .13 / translateY(26px)` and switch on cumulatively as scroll
-    progress crosses thresholds (≈ .04 / .42 / .74); a 2px gold progress rail fills
-    alongside. Implementation: `sticky` + one passive scroll listener computing
-    `p = -rect.top / (rect.height - viewportH)` — no scroll-jacking, native wheel.
-    **Fallbacks:** `≤900px` and `prefers-reduced-motion` → normal flow, all entries
-    visible, no pin.
-11. **Code window line reveal**: on first intersection, lines fade/slide in at 100ms
-    intervals; block cursor keeps blinking on the last line.
-12. **GitHub grid wave**: cells scale/fade in left-to-right (`w*30ms + d*8ms` delays)
-    on first intersection.
+**Curated picks（Start here）**
+- Always exactly 3, hand-picked in `CURATED`. Rotate when a better exemplar exists —
+  the criterion is "shows how I think", not recency or difficulty.
 
-### 7.3 Rules
+**AI notes 5 → more / new course**
+- Keep reading from the sibling repo while CS224n is active; when it ends, move final
+  notes into `ai-knowledge/` (already scanned) and retire `CS224N_META` gradually.
+- ≥10 AI notes: give section 05 the same filter row as the practice log.
 
-- Anything not in §7.2 doesn't animate. Adding a new animation = new decision in §9.
-- All reveals are **once-only** and ≤ .8s; nothing loops except cursor, ping, cue, drift.
-- Implementation: vanilla JS + one IntersectionObserver + CSS custom-prop stagger
-  (`--d`), no libraries — consistent with the zero-dependency posture.
-- **`prefers-reduced-motion: reduce`** turns off *everything*: content renders fully
-  visible (`.rv{opacity:1;transform:none}`), numbers render final values, typewriter
-  prints instantly, cursor/ping/cue static, graph laid out statically. Test both modes.
+**New domain (system-design, `sd-` per SCHEMA.md)**
+- New section only at ≥5 public notes. Domain pill color comes from the existing warm
+  family (e.g. `#6e6a5e`); never a new hue. Add to graph via tags as usual.
 
-## 8. Accessibility & performance（可及性與效能）
+**Activity**
+- As the streak matures, widen `CONTRIB_WEEKS` 6 → 12 → 20 (cell size back down to 13px
+  past 12 weeks). Slicing is tail-anchored — keep it that way.
+- Update the "started logging publicly in spring 2026" caption when it stops being true.
 
-- Contrast: body ink on ground ≥ 7:1 (`#232323` on `#f1eee7` passes); muted text ≥ 4.5:1.
-- Keyboard: visible `:focus-visible` on all interactive elements incl. cards' reveal buttons.
-- Graph canvas gets an offscreen text alternative (the write-up list *is* the fallback).
-- Keep the dependency posture: **no JS frameworks, no build deps** — Google Fonts, KaTeX,
-  GoatCounter are the only external requests. Every added asset must justify itself.
-- Ship `og-image.png` in the same palette; keep JSON-LD Person, sitemap, robots current.
+**Résumé**
+- New job → new top entry replaces "Currently" (which moves into it or shrinks).
+  Keep ≤5 items and balance zigzag column heights (L column = items 0,2,4…).
+- Keep `mind/resume/resume.md` as the source; site bullets stay condensed
+  (action + constraint + **bold result**), LinkedIn-safe altitude.
 
-## 9. Decision log（決策紀錄）
+**Editor**
+- Cap at 6 tabs; swap files instead of adding. If `build.py` outgrows 150 shown lines of
+  interest, point the excerpt at the region that best proves the system (the safety belt).
 
-| Date | Decision | Status |
-|---|---|---|
-| 2025 | Palette: warm paper `#f1eee7` + ink `#232323` + gold `#d6a878`, black graph panel | ✅ decided |
-| 2025 | Recall-then-reveal cards; monochrome knowledge graph | ✅ decided |
-| 2026-07 | This file becomes the design contract; changes go through §0 process | ✅ decided |
-| 2026-07 | Hero: replace rotating 3-scene showcase with one committed thesis + stat strip | 🟡 proposed (v3 mockup) |
-| 2026-07 | Add "Start here" curated row + "The System" section + recency stamp | 🟡 proposed (v3 mockup) |
-| 2026-07-07 | Typography: **keep Fraunces/Inter/JetBrains Mono** (Yuan) | ✅ decided |
-| 2026-07-07 | Accent: **keep gold `#d6a878`**, no hot orange (Yuan) | ✅ decided |
-| 2026-07-07 | Résumé: **web-native section, no PDF**; timeline layout per §6; LinkedIn = full history | ✅ decided (content pending Yuan's review) |
-| 2026-07-07 | Motion system v1 (§7): hero sequence, typewriter, ping, odometer, scroll reveals, reduced-motion | 🟡 proposed (v3 mockup) |
-| 2026-07-07 | "Start here" picks: AI note 05 Backprop (first) · LC 84 · LC 4 | 🟡 proposed — Yuan may swap |
-| 2026-07-07 | Single theme: warm off-white always, no dark mode (Yuan) | ✅ decided |
-| 2026-07-07 | Hero stats: AI group and LeetCode group split by hairline, AI first (Yuan) | ✅ decided |
-| 2026-07-07 | LeetCode = one modest combined "Practice log" section; AI notes get their own section (Yuan) | ✅ decided |
-| 2026-07-07 | Résumé = pinned scrollytelling (sticky stage, entries reveal on scroll progress) (Yuan) | ✅ decided |
-| 2026-07-07 | "The system" = editor-style code window showing the real visibility gate (Yuan: "學參考網站的內嵌程式碼，設計更漂亮") | ✅ decided |
-| 2026-07-07 | GitHub contribution calendar added, 20-week window, gold ramp (Yuan asked; window short因為公開更新是最近開始) | ✅ decided |
-| 2026-07-07 | Page = full-bleed cream/black band rhythm (CA structure); Experience + The system + footer on black; deep device frames inside black bands (Yuan) | ✅ decided |
-| 2026-07-07 | Two-column `.split` compositions (Activity / AI notes / log header); archive = tile grid + reader overlay, replacing stacked full-width cards (Yuan: "不要只用一欄、log 太長、像 shopping 頁面用方塊") | ✅ decided |
-| 2026-07-07 | The-system editor: interactive file tabs over REAL repo files read at build time (note md / SCHEMA.md / build.py reading itself / index.html head), full-width band, scoped to this repo only (Yuan: "可以動、不要 fake data、用整個橫幅、專注在這個網頁專案") | ✅ decided |
-| 2026-07-07 | Experience content = real résumé (mind/resume/resume.md, extracted from .pages): NVIDIA intern / Silicon Motion intern / Broadcom / USC·NYCU. Public version carries no contact info | ✅ decided |
-| 2026-07-07 | SaaS pass (refs: greptile.com, contralabs.com, datacurve.ai — Yuan: "太照本宣科、去看什麼是 saas"): (1) insight marquee under hero — real bold one-liners auto-extracted from write-ups, each links to its card, pause on hover; (2) floatnav → topbar (serif brand · links · LinkedIn CTA, gold-underline active); (3) copy cut to one confident sentence per lede; (4) h2 scale up to 2.5rem, card radius 14px, hover lift −2px + soft shadow. Principle adopted: show the product working, don't describe it; fewer words = more confidence | ✅ decided |
-| 2026-07-07 | Start here: black article blocks left, head right (order flips on mobile); Experience timeline gains "Currently" entry on top (CS224n/minBERT + agentic workflows/evals); short-viewport pin fallback relaxed 720→600px | ✅ decided |
-| 2026-07-07 | Insight marquee REMOVED (Yuan). Replaced by a **digital instrument layer** (Yuan: "要數位感"): dot-grid ground on all bands, 2px gold scroll-progress meter, HUD corner registration marks (graph panel / GH calendar / code frame), kicker decode-in glyph animation, scanline sweep over the code window, mono uppercase data readouts | ✅ decided |
-| 2026-07-07 | Nav: topbar reverted → floating pill navigator (Yuan). Hero typewriter reverted to the ORIGINAL looping mode: type → hold → delete → next phrase (Yuan) | ✅ decided |
-| 2026-07-07 | Knowledge graph → **Obsidian-style rotating globe**: fibonacci-sphere layout (圓的), slow idle rotation + drag/touch to rotate, small depth-scaled dots, hover focuses node+neighbours w/ labels & dims the rest, click keeps the side panel (Yuan) | ✅ decided |
-| 2026-07-07 | h1 = "I work on \<word\>" rotating via DECODE effect (glyphs settle); hero-sub kept. Start here = 3 article columns left + head column right. Hover re-decode: chars near cursor scramble locally (mono kickers → precise mapping) | ✅ decided |
-| 2026-07-07 | **Corner-tick blocks are SQUARE** (Yuan: "做四角邊框就捨棄圓角"): cardk / tile / gh / frame / win / diffbar → radius 0, reader-panel 2px. Rounded corners survive only on soft controls: buttons, pills, inputs, kg side panel | ✅ decided |
-| 2026-07-07 | Decode effects RETIRED — all text motion is **typewriter** (Yuan: "解碼好奇怪"): h1 word loop = type→hold→delete→next w/ gold block cursor; kickers type in on reveal; hover re-scramble removed. Corner ticks moved **outside** the block boundary (crop-mark style, inset −6px); gh calendar loses marks (overflow clips); frame uses dim-gold `.crop` marks | ✅ decided |
+**Deliberately rejected (don't re-propose without new evidence):** dark mode; decode/
+glitch text effects; marquees; nav topbar; PDF résumé; rounded instrument blocks;
+traffic-light difficulty colors; JS frameworks.
+
+**Parking lot (fine ideas, not yet earned):** RSS feed from write-ups; a 中文 mirror page;
+OG-image auto-regeneration in CI; GitHub Action to rebuild nightly (keeps calendar fresh
+without manual builds).
+
+## 10. Repo hygiene
+
+- `site/build.py` is the whole implementation — template chunks as constants, builders
+  per section, one motion IIFE, one globe IIFE. Dead CSS/JS gets deleted, not commented.
+- Caches (`contrib.json`, `activity.json`, `solved.json`) are committed so offline
+  builds work. `index.html` is generated output and is committed (Pages serves it).
+- Verify before commit: `python3 site/build.py` + extract inline scripts → `node --check`.
+
+## 11. Decision log（歷史，僅追加）
+
+| Date | Decision |
+|---|---|
+| 2025 | Warm paper `#f1eee7` + ink `#232323` + gold `#d6a878`; monochrome knowledge graph; recall-then-reveal |
+| 2026-07-07 | DESIGN.md becomes the contract; hero thesis; Fraunces/gold confirmed; single cream theme, no dark mode |
+| 2026-07-07 | Band rhythm (cream/black), web-native no-PDF résumé, GitHub calendar, code-window "system" section |
+| 2026-07-07 | Two-column splits; archive = tile grid + reader overlay; mastery → reader only |
+| 2026-07-07 | Real data everywhere: editor reads repo files (incl. itself), calendar scrapes real counts, activity from events API |
+| 2026-07-07 | Obsidian-style rotating globe with depth-faded labels |
+| 2026-07-07 | Typewriter-only motion (decode & marquee rejected); crop marks outside SQUARE blocks; digital layer (dot grid, progress meter, scanline, HUD readouts) |
+| 2026-07-07 | Start here = 3 black columns left + head right; zigzag experience on center rail; education = one line, not a timeline item |
+| 2026-07-07 | Activity: 6-week window anchored to today (+2 dashed future weeks), click-a-day detail panel on the right |
+| 2026-07-07 | Tab/OG title = the thesis; brand name in the pill navigator; nav dividers removed; wrap widths 1080/1680 |
+| 2026-07-07 | Code cleanup: dead CSS (card2/c-*/mono), GROUPS/graph-groups removed; this document rewritten with scaling playbook |

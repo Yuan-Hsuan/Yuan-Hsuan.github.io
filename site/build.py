@@ -280,31 +280,9 @@ def external_ai_cards():
     return cards
 
 
-# ---- knowledge graph (hierarchical: cluster -> topic -> note) ---------------
-# Top-level clusters. A tag not listed here falls into "Other".
-GROUPS = [
-    ("Arrays & Strings", ["array", "string", "two-pointers", "sliding-window", "sorting",
-                          "prefix-sum", "matrix", "simulation", "merge-sort", "counting-sort",
-                          "bucket-sort", "quickselect", "string-matching", "line-sweep", "ordered-set"]),
-    ("Search & DP", ["binary-search", "dynamic-programming", "greedy", "backtracking", "recursion",
-                     "divide-and-conquer", "memoization", "enumeration", "combinatorics", "bitmask"]),
-    ("Data Structures", ["hash-table", "stack", "monotonic-stack", "linked-list", "queue",
-                         "heap-priority-queue", "design", "bit-manipulation", "doubly-linked-list",
-                         "trie", "segment-tree", "binary-indexed-tree", "monotonic-queue",
-                         "data-stream", "hash-function", "randomized"]),
-    ("Graphs & Trees", ["depth-first-search", "breadth-first-search", "tree", "binary-tree",
-                        "binary-search-tree", "graph", "union-find", "topological-sort",
-                        "shortest-path", "minimum-spanning-tree", "eulerian-circuit", "graph-theory"]),
-    ("Math", ["math", "counting", "number-theory", "geometry", "interactive", "probability"]),
-    ("AI / NLP", ["nlp", "embeddings", "word2vec", "glove", "deep-learning", "classification",
-                  "loss", "transformers", "attention"]),
-]
-OTHER_LABEL = "Other"
-
-
 def build_graph(cards):
-    """All-visible bipartite graph: every note and every topic is a node, notes link to
-    their topics (+ any [[wikilinks]]). Coloured by domain only (2 colours)."""
+    """Bipartite graph for the hero globe: every note and every topic is a node;
+    notes link to their topics (+ any [[wikilinks]])."""
     DOM_CI = {"leetcode": 0, "ai": 1}
     ids = {c["id"] for c in cards}
     tag_dom = defaultdict(Counter)
@@ -347,8 +325,7 @@ def build_graph(cards):
                     seen.add(e)
                     edges.append([e[0], e[1]])
 
-    groups = [{"ci": 0, "label": "LeetCode"}, {"ci": 1, "label": "AI / NLP"}]
-    return {"nodes": nodes, "edges": edges, "groups": groups}
+    return {"nodes": nodes, "edges": edges}
 
 
 def load_solved():
@@ -893,7 +870,7 @@ a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
 ::selection{background:color-mix(in srgb,var(--gold) 45%,transparent)}
 .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(20px,4vw,56px)}
 .wrap.wide{max-width:1680px}
-code,.mono{font-family:var(--mono)}
+code{font-family:var(--mono)}
 h1,h2,h3{text-wrap:balance}
 
 /* ---- full-bleed band rhythm ---- */
@@ -963,7 +940,7 @@ h1,h2,h3{text-wrap:balance}
   border:1px solid var(--border);user-select:none;
   transition:border-color .15s,background .15s,color .15s}
 .btn:hover{text-decoration:none;border-color:var(--fg)}
-.btn:focus-visible,.card2:focus-visible,.row:focus-visible{outline:none;
+.btn:focus-visible,.row:focus-visible{outline:none;
   box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
 .btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent)}
@@ -1201,7 +1178,6 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .difflab{display:flex;gap:1.6rem;margin:0 0 2rem;font-family:var(--mono);
   font-size:.7rem;color:var(--muted);flex-wrap:wrap;font-variant-numeric:tabular-nums}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4em}
-.c-easy{color:var(--easy)} .c-medium{color:var(--medium)} .c-hard{color:var(--hard)}
 
 /* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
