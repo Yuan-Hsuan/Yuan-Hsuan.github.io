@@ -59,39 +59,34 @@ EXPERIENCE = [
          bullets=[
             'Working through <b>Stanford CS224n</b> by hand — embeddings → Transformers, '
             '<b>minBERT in progress</b>. This site’s AI notes are the by-product.',
-            'Digging into <b>agentic workflows and evals</b> — LangGraph-style state '
-            'machines, DSPy, automated evaluation — extending the adoption lesson from '
-            'the NVIDIA engine.']),
+            'Digging into <b>agentic workflows and evals</b> — LangGraph, DSPy, automated '
+            'evaluation — the next step after the NVIDIA engine’s adoption lesson.']),
     dict(when="May — Nov 2025 · Taipei", org="NVIDIA",
          role="Software Engineering Intern — AI diagnostic agent",
          bullets=[
-            'Architected an AI diagnostic agent for system-level bug analysis: a Python '
-            '<b>AST parsing engine</b> statically extracts control-flow features to sharpen '
-            'the LLM’s context. <span class="xp-hook">“I couldn’t scale the hardware, '
+            'Built an AI diagnostic agent for system-level bug analysis — a Python '
+            '<b>AST engine</b> extracts control-flow features so the LLM reads structure, '
+            'not raw logs. <span class="xp-hook">“I couldn’t scale the hardware, '
             'so I shrank the problem.”</span>',
-            'Built the <b>RAG pipeline</b> (LangChain + vector DB) and a Python backend with '
-            'REST APIs wired into NVIDIA’s internal bug-tracking system, plus a diagnostic '
-            'dashboard that visualizes the analysis.',
+            '<b>RAG pipeline</b> (LangChain + vector DB) and a REST backend wired into the '
+            'internal bug tracker, with a dashboard that visualizes the results.',
             '<b>~80% of routine triage automated</b>; adopted as a permanent asset.']),
     dict(when="Jun — Aug 2024 · Hsinchu", org="Silicon Motion",
          role="Verification Engineer Intern",
          bullets=[
-            'Cut manual test setup and intervention by <b>43%</b> with a full-stack '
-            'device-management platform (React + Node.js) — engineers power-cycle test '
-            'chips remotely from a web interface.']),
+            'Cut manual test setup by <b>43%</b> with a full-stack device-management '
+            'platform (React + Node.js) — remote chip power-cycling from the browser.']),
     dict(when="Mar 2021 — Dec 2023", org="Broadcom",
          role="Software Engineer",
          bullets=[
             'Led an automation suite that modulates chip voltage from real-time thermal '
             'and network data — <b>27% better power efficiency</b>.',
-            'Automated IC programming (Python + Bash, Linux) with hardened firmware-'
-            'deployment security — <b>45% less manual programming time</b>.']),
-    dict(when="2018 — 2025", org="USC · NYCU",
-         role="M.S. Computer Science (USC) · B.S. ECE, minor CS (NYCU)",
-         bullets=[
-            'Undergrad EDA-lab research: <b>ILP/SAT models for 7-nm FinFET layout</b> '
-            '(−25.1% filler cells) and IAGM maze routing (−49% M2 usage).']),
+            'Automated IC programming (Python + Bash, Linux) with hardened firmware '
+            'deployment — <b>45% less manual programming time</b>.']),
 ]
+
+# Education lives as one quiet line in the pinned intro column, not a timeline entry.
+EDUCATION_LINE = "M.S. Computer Science — USC (2024–25) · B.S. ECE, minor CS — NYCU"
 
 # ---- external AI notes (single source of truth: the CS224n study repo) -------
 # The notes live in the sibling repo; we read them at build time so the site is
@@ -365,7 +360,7 @@ def load_solved():
 # Fetched at build time from GitHub's public contributions endpoint (no token),
 # cached in site/contrib.json so offline builds still work. Section is omitted
 # entirely if neither the network nor the cache yields data.
-CONTRIB_WEEKS = 20
+CONTRIB_WEEKS = 6          # June–July window while the public streak is young
 
 def load_contrib():
     cache = ROOT / "site" / "contrib.json"
@@ -379,10 +374,17 @@ def load_contrib():
         for td in re.findall(r"<td[^>]*ContributionCalendar-day[^>]*>", page_html):
             d = re.search(r'data-date="(\d{4}-\d{2}-\d{2})"', td)
             l = re.search(r'data-level="(\d)"', td)
+            i = re.search(r'id="([^"]+)"', td)
             if d and l:
-                found[d.group(1)] = int(l.group(1))
+                found[d.group(1)] = {"level": int(l.group(1)),
+                                     "id": i.group(1) if i else "", "count": 0}
+        tips = dict(re.findall(r'<tool-tip[^>]*for="([^"]+)"[^>]*>([^<]+)</tool-tip>', page_html))
+        for v in found.values():                      # "3 contributions on July 3rd."
+            m = re.match(r"(\d+)", tips.get(v["id"], "").strip())
+            v["count"] = int(m.group(1)) if m else 0
         if found:
-            days = [{"date": k, "level": v} for k, v in sorted(found.items())]
+            days = [{"date": k, "level": v["level"], "count": v["count"]}
+                    for k, v in sorted(found.items())]
             cache.write_text(json.dumps({"days": days}), encoding="utf-8")
     except Exception as exc:                                     # offline → cache
         print(f"  (contributions fetch failed: {exc}; trying cache)")
@@ -398,7 +400,8 @@ def load_contrib():
         m = date.fromisoformat(days[i]["date"]).strftime("%b")
         months.append(m if m != seen else "")
         seen = m
-    return {"levels": [d["level"] for d in days], "months": months}
+    return {"days": [{"d": d["date"], "l": d["level"], "c": d.get("count", 0)}
+                     for d in days], "months": months}
 
 
 # ---- HTML section builders ----------------------------------------------------
@@ -413,8 +416,8 @@ def hero_html(cards, solved):
     return f"""
   <header class="hero2" id="top">
     <div class="hero2-left">
-      <p class="kicker rv" style="--d:0s"><span>Yuan-Hsuan Wen</span><span aria-hidden="true">·</span><span id="typed"></span><span class="cursor" aria-hidden="true"></span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
-      <h1 class="rv" style="--d:.15s">The <em>reasoning</em>, not just the code.</h1>
+      <p class="kicker rv" style="--d:0s"><span>Yuan-Hsuan Wen</span><span aria-hidden="true">·</span><span>Learning in public</span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
+      <h1 class="rv" style="--d:.15s">I work on<br><span class="h1-cyc" id="typed">clean algorithms</span></h1>
       <p class="hero-sub rv" style="--d:.3s">Systems engineer, moving into AI infrastructure.
       The practice, logged honestly — mistakes included.</p>
       <div class="stats rv" style="--d:.45s">
@@ -466,8 +469,8 @@ def start_here_html(cards):
             f'<div class="foot"><span>{esc(tags)}</span><span class="go">Read</span></div></a>')
     if not items:
         return ""
-    return ('\n  <section class="band" id="start">\n    <div class="wrap wide split start-split">\n'
-            '      <div class="startcards">' + "".join(items) + '</div>\n'
+    return ('\n  <section class="band" id="start">\n    <div class="wrap wide start-grid">\n'
+            '      <div class="cards3">' + "".join(items) + '</div>\n'
             '      <div class="sec-head rv">\n'
             '        <p class="kicker"><span class="idx">01</span><span class="dec">Start here</span></p>\n'
             '        <h2>Three write-ups that show how I think.</h2>\n'
@@ -480,8 +483,9 @@ def experience_html():
     rows = []
     for i, e in enumerate(EXPERIENCE):
         lis = "".join(f"<li>{b}</li>" for b in e["bullets"])
+        side = "L" if i % 2 == 0 else "R"
         rows.append(
-            f'<div class="xp-item" data-step="{i}">'
+            f'<div class="xp-item {side}" data-step="{i}">'
             f'<div class="xp-when">{esc(e["when"])}</div>'
             f'<h3>{esc(e["org"])}</h3>'
             f'<p class="xp-role">{esc(e["role"])}</p>'
@@ -497,9 +501,8 @@ def experience_html():
           engine that makes them fast and reliable.”</p>
           <div class="xp-cta">
             <a class="btn primary" href="{LINKEDIN_URL}" target="_blank" rel="noopener">Full history on LinkedIn ↗</a>
-            <span class="xp-note">No PDF here on purpose — this page <em>is</em> the résumé,
-            and it’s always current.</span>
           </div>
+          <p class="xp-edu">{EDUCATION_LINE}</p>
         </div>
         <div class="xp-right">
           <div class="rail" aria-hidden="true"><i id="railfill"></i></div>
@@ -522,7 +525,7 @@ def activity_html(contrib):
         <p>Every gold square is a commit to this log or its notes — pulled from GitHub at build time.</p>
         <p class="gh-note">Started logging publicly in spring 2026 — the streak is young on purpose.</p>
       </div>
-      <div class="gh rv hud">
+      <div class="gh rv">
         <div class="gh-head">
           <a class="gh-title" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">github.com/{GITHUB_USER}</a>
           <span class="gh-title">Last {CONTRIB_WEEKS} weeks</span>
@@ -573,7 +576,7 @@ def _pane(key: str, lines: list, start: int, hl) -> str:
     out = []
     for j, raw in enumerate(lines):
         cur = '<span class="cursor" aria-hidden="true"></span>' if j == len(lines) - 1 else ""
-        out.append(f'<span class="ln" style="--d:{0.05 + j*0.06:.2f}s">'
+        out.append(f'<span class="ln" style="--d:{min(0.05 + j*0.05, 0.85):.2f}s">'
                    f'<span class="no">{start + j}</span>{hl(raw.rstrip())}{cur}</span>')
     hidden = "" if key == "build" else " hidden"
     return f'<div class="code" data-pane="{key}"{hidden}><pre>{"".join(out)}</pre></div>'
@@ -591,13 +594,18 @@ def system_html():
         if path is not None:
             if not path.exists():
                 return
-            lines = _file_lines(path, start, 12)
+            lines = _file_lines(path, start, 150)
         tabs.append((key, label, path_label, note))
         panes.append(_pane(key, lines, start, hl))
 
-    note_path = ROOT / "leetcode" / "two-pointers" / "3sum.md"
     add("note", "leetcode/…/3sum.md", "leetcode/two-pointers/3sum.md — a write-up's source",
-        path=note_path, hl=_hl_md)
+        path=ROOT / "leetcode" / "two-pointers" / "3sum.md", hl=_hl_md)
+    add("note2", "leetcode/…/largest-rectangle.md",
+        "leetcode/array/largest-rectangle-in-histogram.md — a hard write-up's source",
+        path=ROOT / "leetcode" / "array" / "largest-rectangle-in-histogram.md", hl=_hl_md)
+    add("ainote", "cs224n/…/05-backprop.md",
+        "Standford-cs224n-nlp/notes/concepts/05-backprop-matrix-calculus.md — an AI note (sibling repo)",
+        path=CS224N_NOTES / "05-backprop-matrix-calculus.md", hl=_hl_md)
     add("schema", "SCHEMA.md", "SCHEMA.md — the metadata contract both repos share",
         path=ROOT / "SCHEMA.md", hl=_hl_md)
     src = Path(__file__).read_text(encoding="utf-8").splitlines()
@@ -605,9 +613,9 @@ def system_html():
     if belt is not None:
         start = belt - 7
         add("build", "site/build.py ●", "site/build.py — this generator, reading itself",
-            lines=src[start:start + 12], start=start + 1, hl=_hl_py)
+            lines=src[:150], start=1, hl=_hl_py)
     add("out", "index.html", "index.html — the generated output GitHub Pages serves",
-        lines=HEAD.splitlines()[:12], start=1, hl=_hl_html, note="← output")
+        lines=HEAD.splitlines()[:80], start=1, hl=_hl_html, note="← output")
 
     tree_rows = []
     for i, (k, lbl, pl, n) in enumerate(tabs):
@@ -621,14 +629,14 @@ def system_html():
 
     default_name = next((pl for k, lbl, pl, n in tabs if k == "build"), tabs[0][2] if tabs else "")
     return f"""
-  <section class="band dark" id="sys">
+  <section class="band" id="sys">
     <div class="wrap wide">
       <div class="sec-head rv">
         <p class="kicker"><span class="idx">04</span><span class="dec">The system</span></p>
         <h2>This site is itself a project.</h2>
         <p>One Python script, zero dependencies. Every file below is read live from the repo — click around.</p>
       </div>
-      <div class="frame rv hud">
+      <div class="frame rv crop">
         <div class="win" id="win">
           <div class="win-bar">
             <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -747,6 +755,9 @@ FOOTER = f"""
     <a href="#xp" data-sec="xp">Résumé</a>
     <a href="#ai" data-sec="ai">Notes</a>
     <a href="#log" data-sec="log">Log</a>
+    <span class="fn-div" aria-hidden="true"></span>
+    <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
+    <a class="ext" href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
   </nav>"""
 
 
@@ -831,8 +842,8 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
 ::selection{background:color-mix(in srgb,var(--gold) 45%,transparent)}
-.wrap{max-width:960px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
-.wrap.wide{max-width:1200px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 clamp(20px,4vw,56px)}
+.wrap.wide{max-width:1680px}
 code,.mono{font-family:var(--mono)}
 h1,h2,h3{text-wrap:balance}
 
@@ -886,6 +897,8 @@ h1,h2,h3{text-wrap:balance}
 .hero2 h1 em{font-style:italic;font-weight:600;
   background:linear-gradient(transparent 70%,color-mix(in srgb,var(--gold) 42%,transparent) 70%)}
 .hero-sub{color:var(--muted);max-width:34rem;margin:0;font-size:1.05rem}
+.h1-cyc{font-style:italic;color:var(--gold);letter-spacing:-.01em;
+  border-right:.06em solid var(--gold);padding-right:.07em}
 .stats{display:flex;gap:2.2rem;border-top:1px solid var(--border);padding-top:1.2rem;flex-wrap:wrap}
 .sgroup{display:flex;flex-direction:column;gap:.5rem}
 .sgroup .sl{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;
@@ -947,10 +960,17 @@ h1,h2,h3{text-wrap:balance}
   font-size:clamp(1.7rem,3vw,2.5rem);letter-spacing:-.008em;line-height:1.15;margin:.5rem 0 0}
 .sec-head p{margin:.5rem 0 0;color:var(--muted);max-width:44rem}
 
-/* ---- start-here: black article blocks (left) + head (right) ---- */
-.start-split{grid-template-columns:1.35fr 1fr;align-items:center}
-.startcards{display:flex;flex-direction:column;gap:12px}
-.cardk{background:var(--panel);border:1px solid #3a3835;border-radius:14px;
+/* ---- start-here: three article columns left, head column right ---- */
+.start-grid{display:grid;grid-template-columns:2.7fr 1fr;gap:clamp(2rem,4vw,4rem);align-items:center}
+.start-grid .sec-head{margin:0}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+@media(max-width:1080px){ .cards3{grid-template-columns:1fr;gap:16px} }
+@media(max-width:900px){
+  .start-grid{grid-template-columns:1fr;gap:1.6rem}
+  .start-grid .sec-head{order:-1}
+  .cards3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+}
+.cardk{background:var(--panel);border:1px solid #3a3835;border-radius:0;
   padding:1.3rem 1.4rem 1.1rem;display:flex;flex-direction:column;gap:.55rem;
   text-decoration:none;color:#f1eee7;transition:border-color .15s,transform .15s,box-shadow .15s}
 .cardk:hover{text-decoration:none;border-color:var(--gold);transform:translateY(-2px);
@@ -966,30 +986,59 @@ h1,h2,h3{text-wrap:balance}
 .cardk .foot .go::after{content:"→";display:inline-block;margin-left:.35em;
   transition:transform .15s var(--ease)}
 @media(hover:hover){ .cardk:hover .foot .go::after{transform:translateX(4px)} }
-@media(max-width:860px){ .start-split .sec-head{order:-1} }
+
+/* digital crop marks — corner ticks OUTSIDE the block boundary (數位感邊框) */
+.cardk,.tile,.crop{position:relative}
+.cardk::after,.tile::after,.crop::after{content:"";position:absolute;inset:-6px;pointer-events:none;
+  --tk:11px;--tw:1.5px;
+  background-image:
+    linear-gradient(var(--tick),var(--tick)),linear-gradient(var(--tick),var(--tick)),
+    linear-gradient(var(--tick),var(--tick)),linear-gradient(var(--tick),var(--tick)),
+    linear-gradient(var(--tick),var(--tick)),linear-gradient(var(--tick),var(--tick)),
+    linear-gradient(var(--tick),var(--tick)),linear-gradient(var(--tick),var(--tick));
+  background-position:left top,left top,right top,right top,
+    left bottom,left bottom,right bottom,right bottom;
+  background-size:var(--tk) var(--tw),var(--tw) var(--tk),var(--tk) var(--tw),var(--tw) var(--tk),
+    var(--tk) var(--tw),var(--tw) var(--tk),var(--tk) var(--tw),var(--tw) var(--tk);
+  background-repeat:no-repeat;transition:opacity .15s}
+.cardk::after{--tick:#8a8378}
+.cardk:hover::after{--tick:var(--gold)}
+.tile::after{--tick:var(--gold);opacity:0}
+.tile:hover::after{opacity:1}
+.crop::after{--tick:rgba(214,168,120,.55)}
 
 /* ---- experience: pinned scrollytelling on black ---- */
 .xp-pin{height:380vh;position:relative;padding-block:0}
 .xp-stage{position:sticky;top:0;min-height:100svh;display:flex;align-items:center}
-.xp-grid{display:grid;grid-template-columns:minmax(280px,1fr) 1.25fr;
-  gap:clamp(2rem,5vw,5rem);align-items:center;width:100%;padding-block:clamp(3rem,6vh,5rem)}
-.pitch{font-family:var(--serif);font-style:italic;font-size:clamp(1.25rem,2vw,1.55rem);
-  line-height:1.45;margin:1.6rem 0 2rem;border-left:3px solid var(--gold);padding-left:1.2rem}
+.xp-grid{display:grid;grid-template-columns:minmax(230px,.72fr) 1.6fr;
+  gap:clamp(2rem,4vw,4rem);align-items:center;width:100%;padding-block:clamp(2.5rem,5vh,4rem)}
+.pitch{font-family:var(--serif);font-style:italic;font-size:clamp(1.1rem,1.6vw,1.3rem);
+  line-height:1.45;margin:1.2rem 0 1.5rem;border-left:3px solid var(--gold);padding-left:1.1rem}
 .xp-cta .btn{display:inline-block;margin-bottom:.8rem}
-.xp-note{font-family:var(--mono);font-size:.68rem;color:var(--muted);display:block;max-width:26rem}
-.xp-right{position:relative;padding-left:2rem}
-.rail{position:absolute;left:0;top:6px;bottom:6px;width:2px;background:rgba(255,255,255,.14)}
+.xp-right{position:relative}
+.rail{position:absolute;left:50%;top:6px;bottom:6px;width:2px;margin-left:-1px;background:rgba(255,255,255,.14)}
 .rail i{position:absolute;left:0;top:0;width:100%;height:0%;background:var(--gold)}
-.xp-item{padding:1rem 0;opacity:.15;transform:translateY(26px);
+.xp-item{position:relative;width:calc(50% - 1.9rem);padding:0 0 1.2rem;
+  opacity:.15;transform:translateY(26px);
   transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .xp-item.on{opacity:1;transform:none}
-.xp-item + .xp-item{border-top:1px solid rgba(255,255,255,.1)}
+.xp-item.L{margin-right:auto}
+.xp-item.R{margin-left:auto}
+.xp-item + .xp-item{margin-top:-2.4rem}
+.xp-item::before{content:"";position:absolute;top:4px;width:9px;height:9px;border-radius:50%;
+  background:var(--gold);opacity:.5;transition:opacity .3s}
+.xp-item.on::before{opacity:1}
+.xp-item.L::before{right:-1.9rem;transform:translateX(50%)}
+.xp-item.R::before{left:-1.9rem;transform:translateX(-50%)}
+.xp-left h2{font-size:clamp(1.4rem,2vw,1.9rem)}
+.xp-edu{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;color:var(--muted);
+  margin:1.4rem 0 0;text-transform:uppercase}
 .xp-when{font-family:var(--mono);font-size:.68rem;letter-spacing:.07em;
   text-transform:uppercase;color:var(--gold)}
-.xp-item h3{font-family:var(--serif);font-weight:600;margin:.25rem 0 0;font-size:1.25rem}
+.xp-item h3{font-family:var(--serif);font-weight:600;margin:.25rem 0 0;font-size:1.15rem}
 .xp-role{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;
   text-transform:uppercase;color:var(--muted);margin:.15rem 0 .4rem}
-.xp-item ul{margin:.15rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.92rem;line-height:1.55}
+.xp-item ul{margin:.15rem 0 0;padding-left:1.05rem;color:var(--muted);font-size:.88rem;line-height:1.5}
 .xp-item li{margin:.25rem 0}
 .xp-item li b{color:var(--fg);font-weight:600}
 .xp-hook{font-family:var(--serif);font-style:italic;color:var(--gold)}
@@ -997,15 +1046,18 @@ h1,h2,h3{text-wrap:balance}
   .xp-pin{height:auto;padding-block:clamp(4rem,9vw,8.5rem)}
   .xp-stage{position:static;display:block;min-height:0}
   .xp-grid{display:block;padding-block:0}
-  .xp-right{margin-top:2rem}
-  .xp-item{opacity:1;transform:none}
+  .xp-right{margin-top:2rem;padding-left:1.6rem}
+  .xp-item{opacity:1;transform:none;width:100%;margin:0;padding:1rem 0}
+  .xp-item + .xp-item{margin-top:0;border-top:1px solid rgba(255,255,255,.1)}
+  .xp-item::before{display:none}
+  .rail{left:0;margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){ .xp-item{opacity:1;transform:none;transition:none} }
 
 /* ---- the system: deep device frame on black ---- */
 .frame{background:#141311;border:1px solid rgba(255,255,255,.09);
-  border-radius:18px;padding:clamp(8px,1.2vw,14px);box-shadow:0 24px 70px rgba(0,0,0,.45)}
-.win{background:#232323;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  border-radius:0;padding:clamp(8px,1.2vw,14px);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.win{background:#232323;border-radius:0;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
 .win-bar{display:flex;align-items:center;gap:1rem;padding:.8rem 1.1rem;
   border-bottom:1px solid rgba(255,255,255,.08)}
 .win-bar .dots{display:flex;gap:7px}
@@ -1022,7 +1074,7 @@ h1,h2,h3{text-wrap:balance}
 .titem:hover{color:#f1eee7}
 .titem.sel{background:#2f2c27;color:#f1eee7}
 .titem:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--gold)}
-.code{padding:1.1rem 1.3rem;overflow-x:auto}
+.code{padding:1.1rem 1.3rem;overflow:auto;max-height:clamp(300px,58svh,720px)}
 .code pre{margin:0;font-family:var(--mono);font-size:.8rem;line-height:1.85;color:#c9c5bd}
 .ln{display:block;opacity:0;transform:translateX(8px);
   transition:opacity .45s var(--ease),transform .45s var(--ease);transition-delay:var(--d,0s)}
@@ -1038,17 +1090,23 @@ h1,h2,h3{text-wrap:balance}
 .win-cap{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin:1rem 0 0}
 
 /* ---- github activity ---- */
-.gh{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:1.6rem;overflow-x:auto}
+.gh{background:var(--surface);border:1px solid var(--border);border-radius:0;
+  padding:1.6rem;overflow-x:auto;position:relative}
+.gh-grid i:hover{outline:1.5px solid var(--gold);outline-offset:1px}
+.gh-tip{position:absolute;z-index:5;background:#232323;color:#f1eee7;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.03em;padding:.45em .8em;
+  white-space:nowrap;pointer-events:none;opacity:0;transform:translate(-50%,-135%);
+  transition:opacity .12s;font-variant-numeric:tabular-nums}
+.gh-tip.show{opacity:1}
 .gh-head{display:flex;justify-content:space-between;align-items:baseline;
   gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap}
 .gh-title{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted)}
 a.gh-title:hover{color:var(--fg);text-decoration:none}
 .gh-months{display:flex;font-family:var(--mono);font-size:.62rem;color:var(--muted);margin:0 0 .45rem}
-.gh-months span{width:16px;flex:none}
-.gh-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;width:max-content}
-.gh-grid i{width:13px;height:13px;border-radius:3px;background:var(--gh0);
+.gh-months span{width:24px;flex:none}
+.gh-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,20px);gap:4px;width:max-content}
+.gh-grid i{width:20px;height:20px;border-radius:0;background:var(--gh0);
   transform:scale(.4);opacity:0;
   transition:transform .4s var(--ease),opacity .4s var(--ease);transition-delay:var(--d,0s)}
 .gh-grid.in i{transform:scale(1);opacity:1}
@@ -1059,7 +1117,7 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .gh-note{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
 .gh-leg{display:flex;align-items:center;gap:4px;font-family:var(--mono);
   font-size:.62rem;color:var(--muted)}
-.gh-leg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.gh-leg i{width:11px;height:11px;border-radius:0;display:inline-block}
 @media (prefers-reduced-motion:reduce){ .gh-grid i{transform:none;opacity:1;transition:none} }
 
 /* ---- note & log lists ---- */
@@ -1077,7 +1135,7 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
   font-family:var(--mono);font-size:.78rem;color:var(--muted);
   font-variant-numeric:tabular-nums;margin:0 0 1rem}
 .lc-inline b{color:var(--fg);font-weight:600;font-size:1rem}
-.diffbar{display:flex;gap:2px;height:10px;border-radius:4px;overflow:hidden;
+.diffbar{display:flex;gap:2px;height:10px;border-radius:0;overflow:hidden;
   max-width:560px;margin:0 0 .6rem}
 .diffbar span{display:block}
 .diffbar .m{--d:.15s} .diffbar .h{--d:.3s}
@@ -1092,8 +1150,8 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .controls select,.controls input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
   background:var(--surface);color:var(--fg);font-size:1rem;font-family:inherit}
 .controls .count{color:var(--muted);font-size:.82rem;margin-left:auto;font-variant-numeric:tabular-nums}
-.tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.tile{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+.tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:0;
   padding:1.1rem 1.2rem 1rem;display:flex;flex-direction:column;gap:.6rem;cursor:pointer;
   user-select:none;transition:border-color .15s,transform .15s,box-shadow .15s;
   animation:tileIn .45s var(--ease) both;animation-delay:var(--d,0s)}
@@ -1125,7 +1183,7 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
   padding:clamp(12px,3vw,32px)}
 .reader[hidden]{display:none}
 .reader-scrim{position:absolute;inset:0;background:rgba(20,19,17,.55);backdrop-filter:blur(3px)}
-.reader-panel{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:16px;
+.reader-panel{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:2px;
   width:min(780px,100%);max-height:min(88svh,900px);display:flex;flex-direction:column;
   box-shadow:0 30px 80px rgba(0,0,0,.35);animation:readerIn .22s var(--ease)}
 @keyframes readerIn{from{opacity:0;transform:scale(.97) translateY(8px)}}
@@ -1167,7 +1225,10 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
   transition:background .2s,color .2s;white-space:nowrap}
 .floatnav a:hover{color:#232323;text-decoration:none}
 .floatnav a.active{background:#232323;color:#f1eee7}
-@media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem} }
+.floatnav .fn-div{width:1px;background:#e3ddd0;margin:5px 3px}
+.floatnav .ext{color:#8a8378}
+@media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem}
+  .floatnav .ext,.floatnav .fn-div{display:none} }
 
 /* ---- digital instrument layer (數位感): dot grid, HUD corners, scan, decode ---- */
 body{background-image:radial-gradient(color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px);
@@ -1209,20 +1270,21 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---- motion system: typewriter, reveals, odometers, scrolly, gh grid ---- */
 (function(){
-  /* typewriter kicker — the original looping mode: type → hold → delete → next */
+  /* h1 "I work on <word>" — classic typewriter loop: type → hold → delete → next */
   const typed=$('typed');
   if(typed){
-    const WORDS=['LEARNING IN PUBLIC','ALGORITHMS, REASONED','NLP FROM SCRATCH','SYSTEMS → AI INFRA'];
+    const WORDS=['clean algorithms','the right data structure','NLP from scratch',
+                 'AI infrastructure','learning in public'];
     if(REDUCED){ typed.textContent=WORDS[0]; }
     else{
       let wi=0,ci=0,del=false;
       (function tick(){
         const w=WORDS[wi%WORDS.length];
         if(!del){ ci++; typed.textContent=w.slice(0,ci);
-          if(ci>=w.length){ del=true; setTimeout(tick,1600); return; } }
+          if(ci>=w.length){ del=true; setTimeout(tick,1700); return; } }
         else{ ci--; typed.textContent=w.slice(0,ci);
           if(ci<=0){ del=false; wi++; } }
-        setTimeout(tick,del?38:70);
+        setTimeout(tick,del?38:72);
       })();
     }
   }
@@ -1238,20 +1300,17 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     up();
   }
 
-  /* kicker decode-in (digital layer) */
-  const GLYPHS='█▓▒░<>/=+*#01';
+  /* kicker type-in (digital layer): types out after the fade so it's actually visible */
   function decode(el){
-    const orig=el.dataset.txt||el.textContent; el.dataset.txt=orig;
-    if(REDUCED){ el.textContent=orig; return; }
-    let f=0; const total=orig.length+5;
-    (function step(){
-      const done=Math.floor((f/total)*orig.length);
-      let s=orig.slice(0,done);
-      for(let i=done;i<orig.length;i++)
-        s+= orig[i]===' '?' ':GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
-      el.textContent=s;
-      if(++f<=total) setTimeout(step,32); else el.textContent=orig;
-    })();
+    if(el._dec) return; el._dec=true;
+    const orig=el.textContent;
+    if(REDUCED) return;
+    el.textContent='';
+    let i=0;
+    setTimeout(function step(){
+      el.textContent=orig.slice(0,++i);
+      if(i<orig.length) setTimeout(step,52);
+    },300);
   }
 
   /* odometer count-up */
@@ -1273,12 +1332,13 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(REDUCED) el.textContent=el.dataset.n; else setTimeout(()=>count(el),500); });
   const io=new IntersectionObserver(es=>{ for(const e of es){ if(e.isIntersecting){
     e.target.classList.add('in');
+    if(e.target.classList.contains('dec')) decode(e.target);
     e.target.querySelectorAll('.odo').forEach(count);
     e.target.querySelectorAll('.dec').forEach(decode);
     if(e.target.id==='win'){ const p=e.target.querySelector('.code:not([hidden])');
       if(p) p.classList.add('in'); }
     io.unobserve(e.target); } } },{threshold:.2});
-  document.querySelectorAll('.band .rv, footer .rv, .diffbar, .gh-grid').forEach(el=>io.observe(el));
+  document.querySelectorAll('.band .rv, footer .rv, .diffbar, .gh-grid, .xp-left .dec').forEach(el=>io.observe(el));
   const win=$('win'); if(win) io.observe(win);
 
   /* the-system editor: file tree switches real panes, line reveal replays */
@@ -1321,15 +1381,31 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* github contribution grid (CONTRIB is embedded at build time) */
   const grid=$('ghgrid');
-  if(grid && typeof CONTRIB!=='undefined' && CONTRIB && CONTRIB.levels){
+  if(grid && typeof CONTRIB!=='undefined' && CONTRIB && CONTRIB.days){
     let cells='';
-    CONTRIB.levels.forEach((l,i)=>{
+    CONTRIB.days.forEach((day,i)=>{
       const w=Math.floor(i/7), d=i%7;
-      cells+='<i class="l'+l+'" style="--d:'+(w*30+d*8)+'ms"></i>';
+      cells+='<i class="l'+day.l+'" data-i="'+i+'" style="--d:'+(w*30+d*8)+'ms"></i>';
     });
     grid.innerHTML=cells;
     const months=$('ghmonths');
     if(months) months.innerHTML=CONTRIB.months.map(m=>'<span>'+m+'</span>').join('');
+    /* GitHub-style hover tooltip with the real count */
+    const box=grid.closest('.gh');
+    const tip=document.createElement('div'); tip.className='gh-tip'; box.appendChild(tip);
+    const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    grid.addEventListener('mouseover',e=>{
+      const c=e.target.closest('i'); if(!c||!c.dataset.i) return;
+      const day=CONTRIB.days[+c.dataset.i]; if(!day) return;
+      const dt=new Date(day.d+'T00:00:00');
+      tip.textContent=(day.c===1?'1 contribution':day.c+' contributions')
+        +' · '+MN[dt.getMonth()]+' '+dt.getDate();
+      const r=c.getBoundingClientRect(), b=box.getBoundingClientRect();
+      tip.style.left=(r.left-b.left+r.width/2)+'px';
+      tip.style.top=(r.top-b.top)+'px';
+      tip.classList.add('show');
+    });
+    grid.addEventListener('mouseout',()=>tip.classList.remove('show'));
   }
 })();
 
@@ -1443,15 +1519,21 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       ctx.fillStyle=(n===focus)?'#d6a878':(nb?'#f1eee7':'#ededed');
       ctx.beginPath(); ctx.arc(n.px,n.py,nb?base*1.7:base,0,6.283); ctx.fill();
     }
-    if(focus){ ctx.globalAlpha=1;
-      const labs=[focus].concat(adj[focus._i].map(i=>N[i]).filter(n=>n.pz>-0.3).slice(0,8));
-      for(const n of labs){
-        const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
-        ctx.font=(n===focus?'600 12px ':'500 10px ')+'"JetBrains Mono",monospace';
-        ctx.textAlign='center'; ctx.textBaseline='top';
-        ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.px,n.py+7);
-        ctx.fillStyle=n===focus?'#d6a878':'#c9c5bd'; ctx.fillText(lab,n.px,n.py+7);
-      }
+    /* labels — Obsidian-style: topics always (depth-faded), notes when they face front;
+       with a focus, only the focus + its neighbours stay readable */
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    for(const n of order){
+      const front=(n.pz+1)/2;
+      let a;
+      if(focus){ a = (n===focus||isNbr(focus,n)) ? 1 : 0.05; }
+      else if(n.type==='tag'){ a = 0.22+0.6*front; }
+      else{ if(n.pz<0.3) continue; a = 0.4*front; }
+      if(a<=0.06) continue;
+      const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
+      ctx.font=(n===focus?'600 12px ':(n.type==='tag'?'500 10px ':'400 9px '))+'"JetBrains Mono",monospace';
+      ctx.globalAlpha=a*birth;
+      ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.px,n.py+7);
+      ctx.fillStyle=n===focus?'#d6a878':'#c9c5bd'; ctx.fillText(lab,n.px,n.py+7);
     }
     ctx.globalAlpha=1;
   }
