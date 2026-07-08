@@ -777,11 +777,10 @@ FOOTER = f"""
   <div class="progress" aria-hidden="true"><i id="prog"></i></div>
   <nav class="floatnav" id="floatnav" aria-label="Sections">
     <a class="fn-brand" href="#top">Yuan-Hsuan Wen</a>
-    <a href="#top" data-sec="top">Graph</a>
-    <a href="#start" data-sec="start">Start</a>
+    <a href="#start" data-sec="start">Start here</a>
     <a href="#xp" data-sec="xp">Résumé</a>
-    <a href="#ai" data-sec="ai">Notes</a>
-    <a href="#log" data-sec="log">Log</a>
+    <a href="#ai" data-sec="ai">AI notes</a>
+    <a href="#log" data-sec="log">Practice log</a>
     <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
     <a class="ext" href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
   </nav>"""

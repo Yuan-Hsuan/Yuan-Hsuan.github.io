@@ -242,3 +242,4 @@ without manual builds).
 | 2026-07-07 | Activity: 6-week window anchored to today (+2 dashed future weeks), click-a-day detail panel on the right |
 | 2026-07-07 | Tab/OG title = the thesis; brand name in the pill navigator; nav dividers removed; wrap widths 1080/1680 |
 | 2026-07-07 | Code cleanup: dead CSS (card2/c-*/mono), GROUPS/graph-groups removed; this document rewritten with scaling playbook |
+| 2026-07-07 | Nav tabs renamed to match sections: Start here · Résumé · AI notes · Practice log (Graph tab dropped — the brand is the home link). Project protocol added as CLAUDE.md |
