@@ -24,7 +24,7 @@ import re
 import shutil
 import urllib.request
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 # ---- config -----------------------------------------------------------------
@@ -42,10 +42,10 @@ CURATED = [
     dict(id="ai-backprop", meta="AI / CS224n · Note 05",
          why="Deriving the gradients on paper before letting PyTorch do it — with the "
              "shape-checking habit that catches most of my bugs."),
-    dict(id="lc-largest-rectangle-in-histogram", meta="LeetCode 84 · Hard · Mastery 5/5",
+    dict(id="lc-largest-rectangle-in-histogram", meta="LeetCode 84 · Hard",
          why="The monotonic-stack invariant, built up from the O(n²) version — how a "
              "trick becomes a reusable pattern."),
-    dict(id="lc-median-of-two-sorted-arrays", meta="LeetCode 4 · Hard · Mastery 5/5",
+    dict(id="lc-median-of-two-sorted-arrays", meta="LeetCode 4 · Hard",
          why="Binary search on the partition, not the value — including the off-by-one "
              "traps I fell into first."),
 ]
@@ -362,6 +362,38 @@ def load_solved():
 # entirely if neither the network nor the cache yields data.
 CONTRIB_WEEKS = 6          # June–July window while the public streak is young
 
+
+def load_activity():
+    """Per-day detail (repo → commits/events) from the public Events API, cached.
+    Only PUBLIC repos ever appear here, so mind/ stays invisible by construction."""
+    cache = ROOT / "site" / "activity.json"
+    events = None
+    try:
+        req = urllib.request.Request(
+            f"https://api.github.com/users/{GITHUB_USER}/events/public?per_page=100",
+            headers={"User-Agent": "build.py", "Accept": "application/vnd.github+json"})
+        events = json.loads(urllib.request.urlopen(req, timeout=10).read().decode("utf-8"))
+        cache.write_text(json.dumps(events), encoding="utf-8")
+    except Exception as exc:
+        print(f"  (activity fetch failed: {exc}; trying cache)")
+        if cache.exists():
+            events = json.loads(cache.read_text(encoding="utf-8"))
+    if not events:
+        return {}
+    agg = {}
+    for ev in events:
+        d = ev.get("created_at", "")[:10]
+        repo = ev.get("repo", {}).get("name", "").split("/")[-1]
+        if not d or not repo:
+            continue
+        r = agg.setdefault(d, {}).setdefault(repo, [0, 0])   # [commits, other events]
+        if ev.get("type") == "PushEvent":
+            r[0] += len(ev.get("payload", {}).get("commits", []) or []) or 1
+        else:
+            r[1] += 1
+    return agg
+
+
 def load_contrib():
     cache = ROOT / "site" / "contrib.json"
     days = None
@@ -392,16 +424,28 @@ def load_contrib():
         days = json.loads(cache.read_text(encoding="utf-8")).get("days")
     if not days:
         return None
-    days = days[-(CONTRIB_WEEKS * 7 + 6):]
+    days = days[-(CONTRIB_WEEKS * 7):]                  # anchor the window to TODAY
     off = (date.fromisoformat(days[0]["date"]).weekday() + 1) % 7   # align col 1 to Sunday
-    days = days[(7 - off) % 7:][:CONTRIB_WEEKS * 7]
+    days = days[(7 - off) % 7:]                         # trim the front only — never the tail
+    last = date.fromisoformat(days[-1]["date"])
+    future = 0
+    while future < 14 or len(days) % 7:                     # two weeks ahead, whole columns
+        future += 1
+        days.append({"date": (last + timedelta(days=future)).isoformat(),
+                     "level": -1, "count": 0})
+    act = load_activity()
+    out = []
+    for d in days:
+        e = {"d": d["date"], "l": d["level"], "c": d.get("count", 0)}
+        if d["date"] in act:
+            e["a"] = [[repo, v[0], v[1]] for repo, v in act[d["date"]].items()]
+        out.append(e)
     months, seen = [], None
     for i in range(0, len(days), 7):
         m = date.fromisoformat(days[i]["date"]).strftime("%b")
         months.append(m if m != seen else "")
         seen = m
-    return {"days": [{"d": d["date"], "l": d["level"], "c": d.get("count", 0)}
-                     for d in days], "months": months}
+    return {"days": out, "months": months}
 
 
 # ---- HTML section builders ----------------------------------------------------
@@ -528,14 +572,19 @@ def activity_html(contrib):
       <div class="gh rv">
         <div class="gh-head">
           <a class="gh-title" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">github.com/{GITHUB_USER}</a>
-          <span class="gh-title">Last {CONTRIB_WEEKS} weeks</span>
+          <span class="gh-title">click a day for details</span>
         </div>
-        <div class="gh-months" id="ghmonths" aria-hidden="true"></div>
-        <div class="gh-grid" id="ghgrid" role="img" aria-label="GitHub contribution calendar, last {CONTRIB_WEEKS} weeks"></div>
-        <div class="gh-foot">
-          <span class="gh-leg">Less
-            <i style="background:var(--gh0)"></i><i style="background:var(--gh1)"></i><i style="background:var(--gh2)"></i><i style="background:var(--gh3)"></i><i style="background:var(--gh4)"></i>
-          More</span>
+        <div class="gh-flex">
+          <div class="gh-cal">
+            <div class="gh-months" id="ghmonths" aria-hidden="true"></div>
+            <div class="gh-grid" id="ghgrid" role="img" aria-label="GitHub contribution calendar, last {CONTRIB_WEEKS} weeks"></div>
+            <div class="gh-foot">
+              <span class="gh-leg">Less
+                <i style="background:var(--gh0)"></i><i style="background:var(--gh1)"></i><i style="background:var(--gh2)"></i><i style="background:var(--gh3)"></i><i style="background:var(--gh4)"></i>
+              More</span>
+            </div>
+          </div>
+          <div class="gh-act" id="ghact"><span class="dim">select a day —</span></div>
         </div>
       </div>
     </div>
@@ -667,7 +716,7 @@ def ai_notes_html(cards):
             f'<a class="row rv" style="--d:{i*0.06:.2f}s" href="#card-{esc(c["id"])}" '
             f'onclick="expandCard(\'{esc(c["id"])}\');return false;">'
             f'<span class="i">{i+1:02d}</span><span class="t">{esc(c["title"])}</span>'
-            f'<span class="d">cs224n · mastery {c["mastery"]}/5</span></a>')
+            f'<span class="d">cs224n</span></a>')
     return ('\n  <section class="band" id="ai">\n    <div class="wrap wide split">\n'
             '      <div class="sec-head rv">\n'
             '        <p class="kicker"><span class="idx">05</span><span class="dec">AI notes</span></p>\n'
@@ -750,6 +799,8 @@ FOOTER = f"""
 
   <div class="progress" aria-hidden="true"><i id="prog"></i></div>
   <nav class="floatnav" id="floatnav" aria-label="Sections">
+    <a class="fn-brand" href="#top">Yuan-Hsuan Wen</a>
+    <span class="fn-div" aria-hidden="true"></span>
     <a href="#top" data-sec="top">Graph</a>
     <a href="#start" data-sec="start">Start</a>
     <a href="#xp" data-sec="xp">Résumé</a>
@@ -892,13 +943,12 @@ h1,h2,h3{text-wrap:balance}
 .hero2{min-height:100svh;display:flex;align-items:stretch;position:relative}
 .hero2-left{flex:0 0 47%;min-width:0;display:flex;flex-direction:column;justify-content:center;
   gap:1.5rem;padding:clamp(24px,5vw,72px)}
-.hero2 h1{font-family:var(--serif);font-weight:600;font-optical-sizing:auto;
-  font-size:clamp(2.4rem,4.6vw,4rem);line-height:1.06;letter-spacing:-.01em;margin:0}
+.hero2 h1{font-family:var(--mono);font-weight:600;
+  font-size:clamp(1.9rem,3.3vw,3rem);line-height:1.18;letter-spacing:-.03em;margin:0}
 .hero2 h1 em{font-style:italic;font-weight:600;
   background:linear-gradient(transparent 70%,color-mix(in srgb,var(--gold) 42%,transparent) 70%)}
 .hero-sub{color:var(--muted);max-width:34rem;margin:0;font-size:1.05rem}
-.h1-cyc{font-style:italic;color:var(--gold);letter-spacing:-.01em;
-  border-right:.06em solid var(--gold);padding-right:.07em}
+.h1-cyc{color:var(--gold);border-right:.07em solid var(--gold);padding-right:.08em}
 .stats{display:flex;gap:2.2rem;border-top:1px solid var(--border);padding-top:1.2rem;flex-wrap:wrap}
 .sgroup{display:flex;flex-direction:column;gap:.5rem}
 .sgroup .sl{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;
@@ -1090,8 +1140,7 @@ h1,h2,h3{text-wrap:balance}
 .win-cap{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin:1rem 0 0}
 
 /* ---- github activity ---- */
-.gh{background:var(--surface);border:1px solid var(--border);border-radius:0;
-  padding:1.6rem;overflow-x:auto;position:relative}
+.gh{padding:2.4rem 0 0;overflow-x:auto;position:relative}
 .gh-grid i:hover{outline:1.5px solid var(--gold);outline-offset:1px}
 .gh-tip{position:absolute;z-index:5;background:#232323;color:#f1eee7;
   font-family:var(--mono);font-size:.68rem;letter-spacing:.03em;padding:.45em .8em;
@@ -1112,6 +1161,17 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .gh-grid.in i{transform:scale(1);opacity:1}
 .gh-grid i.l1{background:var(--gh1)} .gh-grid i.l2{background:var(--gh2)}
 .gh-grid i.l3{background:var(--gh3)} .gh-grid i.l4{background:var(--gh4)}
+.gh-grid i.f{background:transparent;border:1px dashed #d5cdbc}
+.gh-grid i.sel{outline:2px solid var(--gold);outline-offset:1px}
+.gh-flex{display:flex;gap:2rem;align-items:stretch}
+.gh-act{font-family:var(--mono);font-size:.72rem;color:var(--muted);flex:1;min-width:200px;
+  border-left:1px solid var(--border);padding:.2rem 0 .2rem 1.6rem;
+  font-variant-numeric:tabular-nums;line-height:2}
+.gh-act .dim{opacity:.55}
+@media(max-width:700px){ .gh-flex{flex-direction:column;gap:1.2rem}
+  .gh-act{border-left:none;border-top:1px solid var(--border);padding:1rem 0 0} }
+.gh-act b{color:var(--fg);font-weight:600}
+.gh-act .r{color:var(--gold)}
 .gh-foot{display:flex;justify-content:space-between;align-items:center;
   margin-top:1rem;gap:1rem;flex-wrap:wrap}
 .gh-note{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
@@ -1225,10 +1285,13 @@ footer .fm a:hover{color:var(--fg);text-decoration:none}
   transition:background .2s,color .2s;white-space:nowrap}
 .floatnav a:hover{color:#232323;text-decoration:none}
 .floatnav a.active{background:#232323;color:#f1eee7}
+.floatnav .fn-brand{font-family:var(--serif);font-weight:600;font-size:.95rem;
+  letter-spacing:-.01em;color:#232323;padding:7px 10px 7px 15px}
+.floatnav .fn-brand:hover{color:#232323}
 .floatnav .fn-div{width:1px;background:#e3ddd0;margin:5px 3px}
 .floatnav .ext{color:#8a8378}
 @media(max-width:640px){ .floatnav a{padding:7px 11px;font-size:.78rem}
-  .floatnav .ext,.floatnav .fn-div{display:none} }
+  .floatnav .ext,.floatnav .fn-div,.floatnav .fn-brand{display:none} }
 
 /* ---- digital instrument layer (數位感): dot grid, HUD corners, scan, decode ---- */
 body{background-image:radial-gradient(color-mix(in srgb,var(--fg) 9%,transparent) 1px,transparent 1px);
@@ -1385,7 +1448,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let cells='';
     CONTRIB.days.forEach((day,i)=>{
       const w=Math.floor(i/7), d=i%7;
-      cells+='<i class="l'+day.l+'" data-i="'+i+'" style="--d:'+(w*30+d*8)+'ms"></i>';
+      cells+='<i class="'+(day.l<0?'f':'l'+day.l)+'" data-i="'+i+'" style="--d:'+(w*30+d*8)+'ms"></i>';
     });
     grid.innerHTML=cells;
     const months=$('ghmonths');
@@ -1398,7 +1461,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const c=e.target.closest('i'); if(!c||!c.dataset.i) return;
       const day=CONTRIB.days[+c.dataset.i]; if(!day) return;
       const dt=new Date(day.d+'T00:00:00');
-      tip.textContent=(day.c===1?'1 contribution':day.c+' contributions')
+      tip.textContent=(day.l<0?'upcoming':(day.c===1?'1 contribution':day.c+' contributions'))
         +' · '+MN[dt.getMonth()]+' '+dt.getDate();
       const r=c.getBoundingClientRect(), b=box.getBoundingClientRect();
       tip.style.left=(r.left-b.left+r.width/2)+'px';
@@ -1406,6 +1469,30 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       tip.classList.add('show');
     });
     grid.addEventListener('mouseout',()=>tip.classList.remove('show'));
+    /* click a day -> its contribution activity (from the public events API) */
+    const act=$('ghact');
+    grid.addEventListener('click',e=>{
+      const c=e.target.closest('i'); if(!c||!c.dataset.i||!act) return;
+      const day=CONTRIB.days[+c.dataset.i]; if(!day||day.l<0) return;
+      grid.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
+      if(act.dataset.d===day.d){
+        act.innerHTML='<span class="dim">select a day —</span>'; act.dataset.d=''; return; }
+      c.classList.add('sel'); act.dataset.d=day.d;
+      const dt=new Date(day.d+'T00:00:00');
+      let h='<b>'+MN[dt.getMonth()]+' '+dt.getDate()+'</b> — '
+        +(day.c===1?'1 contribution':day.c+' contributions');
+      if(day.a && day.a.length){
+        h+=day.a.map(([repo,commits,events])=>{
+          const bits=[];
+          if(commits) bits.push(commits+(commits===1?' commit':' commits'));
+          if(events) bits.push(events+(events===1?' event':' events'));
+          return '<br><span class="r">▸ '+repo+'</span> — '+bits.join(' · ');
+        }).join('');
+      } else {
+        h+='<br>no public details (private repo, or older than the events window)';
+      }
+      act.innerHTML=h;
+    });
   }
 })();
 
@@ -1422,7 +1509,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       +'<div class="t-top">'+domPill(c.domain)+diffPill(c.difficulty)+'</div>'
       +'<h3>'+c.title+'</h3>'
       +'<div class="tags">'+c.tags.slice(0,3).map(t=>'<span>#'+t+'</span>').join('')+'</div>'
-      +'<div class="t-foot"><span>mastery '+c.mastery+'/5</span><span class="go">Read</span></div></article>';
+      +'<div class="t-foot"><span>~'+c.words+' words</span><span class="go">Read</span></div></article>';
   }
   function draw(list){
     grid.innerHTML=list.map(tileHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
