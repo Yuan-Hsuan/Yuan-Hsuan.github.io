@@ -68,8 +68,8 @@ EXPERIENCE = [
             '<b>AST engine</b> extracts control-flow features so the LLM reads structure, '
             'not raw logs. <span class="xp-hook">“I couldn’t scale the hardware, '
             'so I shrank the problem.”</span>',
-            '<b>RAG pipeline</b> (LangChain + vector DB) and a REST backend wired into the '
-            'internal bug tracker, with a dashboard that visualizes the results.',
+            '<b>RAG pipeline</b> (LangChain + Milvus) and a Dockerized REST backend wired '
+            'into the internal bug tracker, with a dashboard that visualizes the results.',
             '<b>~80% of routine triage automated</b>; adopted as a permanent asset.']),
     dict(when="Jun — Aug 2024 · Hsinchu", org="Silicon Motion",
          role="Verification Engineer Intern",
@@ -253,6 +253,21 @@ def collect():
     return cards
 
 
+def strip_note_front(text: str):
+    """Body = everything from the first real '## ' section onward, dropping the H1
+    title, the '> …' source header, and the '## Contents' block. Robust to whether
+    the note keeps '---' separators — the notes are hand-edited freely, so we can't
+    rely on their punctuation (that once leaked Source/Contents into the site)."""
+    lines = text.split("\n")
+    for i, ln in enumerate(lines):
+        if ln.startswith("## ") and not ln[3:].lstrip().startswith(("Contents", "目錄")):
+            return "\n".join(lines[i:]).strip()
+    parts = text.split("\n---\n", 2)                             # fallback: old --- split
+    if len(parts) >= 3:
+        return parts[2].strip()
+    return re.sub(r"^#.*\n", "", text, count=1).strip()
+
+
 def external_ai_cards():
     """Read the CS224n notes from the sibling repo at build time (single source of
     truth) and turn each into an AI card. Returns [] if the repo isn't next door."""
@@ -267,8 +282,7 @@ def external_ai_cards():
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
-        parts = text.split("\n---\n", 2)                         # drop title + header + Contents
-        body = parts[2].strip() if len(parts) >= 3 else re.sub(r"^#.*\n", "", text, count=1).strip()
+        body = strip_note_front(text)                            # drop title + header + Contents
         body = WIKILINK.sub(r"\1", body)                          # strip [[ ]] the site can't resolve
         cards.append({
             "id": m["id"], "domain": "ai", "title": m["title"],
