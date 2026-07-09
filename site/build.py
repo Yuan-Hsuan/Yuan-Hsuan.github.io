@@ -24,7 +24,7 @@ import re
 import shutil
 import urllib.request
 from collections import Counter, defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 # ---- config -----------------------------------------------------------------
@@ -373,13 +373,17 @@ def load_activity():
         return {}
     agg = {}
     for ev in events:
-        d = ev.get("created_at", "")[:10]
+        ts = ev.get("created_at", "")
         repo = ev.get("repo", {}).get("name", "").split("/")[-1]
-        if not d or not repo:
+        if not ts or not repo:
             continue
-        r = agg.setdefault(d, {}).setdefault(repo, [0, 0])   # [commits, other events]
+        # created_at is UTC; the contribution calendar counts by LOCAL day —
+        # convert, or evening pushes drift onto the next day's (empty) cell.
+        d = (datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
+             .replace(tzinfo=timezone.utc).astimezone().date().isoformat())
+        r = agg.setdefault(d, {}).setdefault(repo, [0, 0])   # [pushes, other events]
         if ev.get("type") == "PushEvent":
-            r[0] += len(ev.get("payload", {}).get("commits", []) or []) or 1
+            r[0] += 1        # unauthenticated payloads omit the commit list, so count pushes
         else:
             r[1] += 1
     return agg
@@ -1468,9 +1472,9 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let h='<b>'+MN[dt.getMonth()]+' '+dt.getDate()+'</b> — '
         +(day.c===1?'1 contribution':day.c+' contributions');
       if(day.a && day.a.length){
-        h+=day.a.map(([repo,commits,events])=>{
+        h+=day.a.map(([repo,pushes,events])=>{
           const bits=[];
-          if(commits) bits.push(commits+(commits===1?' commit':' commits'));
+          if(pushes) bits.push(pushes+(pushes===1?' push':' pushes'));
           if(events) bits.push(events+(events===1?' event':' events'));
           return '<br><span class="r">▸ '+repo+'</span> — '+bits.join(' · ');
         }).join('');
