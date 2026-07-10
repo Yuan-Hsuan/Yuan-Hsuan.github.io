@@ -1553,7 +1553,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const N=GRAPH.nodes, E=GRAPH.edges;
   N.forEach((n,i)=>n._i=i);
   const adj=N.map(()=>[]); E.forEach(e=>{adj[e[0]].push(e[1]); adj[e[1]].push(e[0]);});
-  if(hud) hud.textContent='nodes '+N.length+' · edges '+E.length+' · drag to rotate · click a dot';
+  if(hud) hud.textContent='nodes '+N.length+' · edges '+E.length+' · drag to rotate · click a topic';
   let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
   function resize(){ const r=cv.getBoundingClientRect(); W=r.width; H=r.height;
     cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
@@ -1592,7 +1592,8 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const nb=focus&&isNbr(focus,n);
       const base=(n.type==='tag'?2.6:1.7)*n.pf;
       const front=(n.pz+1)/2;
-      ctx.globalAlpha=(focus?(nb?1:0.15):0.35+0.65*front)*birth;
+      const rest=(0.35+0.65*front)*(n.type==='note'?0.5:1);   // notes rest as faint dots
+      ctx.globalAlpha=(focus?(nb?1:0.15):rest)*birth;
       ctx.fillStyle=(n===focus)?'#d6a878':(nb?'#f1eee7':'#ededed');
       ctx.beginPath(); ctx.arc(n.px,n.py,nb?base*1.7:base,0,6.283); ctx.fill();
     }
@@ -1604,7 +1605,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       let a;
       if(focus){ a = (n===focus||isNbr(focus,n)) ? 1 : 0.05; }
       else if(n.type==='tag'){ a = 0.22+0.6*front; }
-      else{ if(n.pz<0.3) continue; a = 0.4*front; }
+      else continue;                          // notes stay unlabeled until a topic is focused
       if(a<=0.06) continue;
       const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
       ctx.font=(n===focus?'600 12px ':(n.type==='tag'?'500 10px ':'400 9px '))+'"JetBrains Mono",monospace';
@@ -1626,8 +1627,11 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     requestAnimationFrame(loop);
   })();
 
+  /* topics are the first layer: only they are hit-testable at rest. A note becomes
+     targetable ONLY while its topic is selected — so problem titles never surface first. */
+  const targetable=n=>n.type==='tag'||(sel&&sel.type==='tag'&&isNbr(sel,n));
   function nodeAt(x,y){ let best=null,bd=169;           // 13px hit radius, front hemisphere first
-    for(const n of N){ if(n.pz<-0.25) continue;
+    for(const n of N){ if(n.pz<-0.25||!targetable(n)) continue;
       const d=(x-n.px)*(x-n.px)+(y-n.py)*(y-n.py);
       if(d<bd){ bd=d; best=n; } }
     return best; }

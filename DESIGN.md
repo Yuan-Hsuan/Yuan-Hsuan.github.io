@@ -216,8 +216,12 @@ glitch text effects; marquees; nav topbar; PDF résumé; rounded instrument bloc
 traffic-light difficulty colors; JS frameworks.
 
 **Parking lot (fine ideas, not yet earned):** RSS feed from write-ups; a 中文 mirror page;
-OG-image auto-regeneration in CI; GitHub Action to rebuild nightly (keeps calendar fresh
-without manual builds).
+OG-image auto-regeneration in CI; auto-refreshing the contribution calendar (evaluated
+2026-07-08 → **not yet**: the streak is young and the calendar already refreshes on any
+real rebuild, so effort belongs on content. When it's earned, do NOT ship the naive
+nightly cron-commit — it churns the git history; prefer deploy-artifact via Actions
+"GitHub Actions" Pages source (no commit), or a client-side fetch from a CORS source
+rendered in our own style — and keep the "no backend / cookieless / fully-static" property).
 
 ## 10. Repo hygiene
 
@@ -243,3 +247,5 @@ without manual builds).
 | 2026-07-07 | Tab/OG title = the thesis; brand name in the pill navigator; nav dividers removed; wrap widths 1080/1680 |
 | 2026-07-07 | Code cleanup: dead CSS (card2/c-*/mono), GROUPS/graph-groups removed; this document rewritten with scaling playbook |
 | 2026-07-07 | Nav tabs renamed to match sections: Start here · Résumé · AI notes · Practice log (Graph tab dropped — the brand is the home link). Project protocol added as CLAUDE.md |
+| 2026-07-09 | Contribution detail: bucket events by LOCAL day (UTC drift bug), label counts as "pushes" not commits (unauthenticated payloads omit the commit list) |
+| 2026-07-09 | Knowledge globe: TOPICS are the first layer — only tags show labels / are clickable at rest. Note dots stay faint, unlabeled, and non-clickable until their topic is selected; problem titles never surface first (data still bipartite, gate is interaction-only) |
