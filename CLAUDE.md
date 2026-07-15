@@ -55,6 +55,11 @@ open index.html                # eyeball it — Yuan reviews locally
 
 - Iterate in small batches exactly as Yuan asks; open the page after each build.
 - **Commit/push only when Yuan says "commit+push"** (push = live deploy on Pages).
+- **Content push ⇒ site rebuild (standing rule, 2026-07-08):** when she says commit+push for
+  public-site **content** — leetcode write-ups here, or the sibling CS224n notes
+  (`../Standford-cs224n-nlp/notes/concepts/`) — that push **includes** rebuilding this site
+  (`build.py`) → JS check → commit + push, so the notes **and** the contribution calendar go
+  live together. Scoped to site content only — never trigger it for `mind/` or unrelated repos.
 - Record every visual decision in `DESIGN.md` §11; propose rule changes there first.
 - Don't re-propose rejected ideas (DESIGN.md §9 list) without new evidence.
 
