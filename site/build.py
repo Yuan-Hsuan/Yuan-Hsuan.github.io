@@ -721,8 +721,14 @@ def ai_notes_html(cards):
             '    </div>\n  </section>')
 
 
+DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge", "frontend": "Frontend"}
+
+
 def log_html(cards, solved):
     n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
+    dom_opts = "".join(
+        f'<option value="{esc(d)}">{esc(DOMAIN_LABELS.get(d, d.title()))}</option>'
+        for d in sorted({c["domain"] for c in cards}))
     c = (solved or {}).get("counts", {})
     total, e, m, h = (c.get(k, 0) for k in ("total", "easy", "medium", "hard"))
     user = (solved or {}).get("username", GITHUB_USER)
@@ -753,7 +759,7 @@ def log_html(cards, solved):
       </div>
       <div class="controls rv">
         <select id="f-domain" aria-label="Filter by domain"><option value="">All domains</option>
-          <option value="leetcode">LeetCode</option><option value="ai">AI Knowledge</option></select>
+          {dom_opts}</select>
         <select id="f-diff" aria-label="Filter by difficulty"><option value="">All difficulty</option>
           <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
         <select id="f-tag" aria-label="Filter by topic"><option value="">All topics</option></select>
@@ -1492,7 +1498,8 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tagSel=$('f-tag');
   TAGS.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
   const diffPill=d=>d?'<span class="pill diff-'+d+'">'+d+'</span>':'';
-  const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(d==='ai'?'AI':'LeetCode')+'</span>';
+  const DOM_LABEL={leetcode:'LeetCode',ai:'AI',frontend:'Frontend'};
+  const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(DOM_LABEL[d]||d)+'</span>';
   function tileHTML(c,i){
     return '<article class="tile" id="card-'+c.id+'" data-id="'+c.id+'" tabindex="0" role="button" '
       +'aria-haspopup="dialog" style="--d:'+((i%12)*40)+'ms">'
