@@ -1,6 +1,6 @@
 ---
 id: static-site-architecture
-domain: frontend
+domain: software-engineering
 title: Static Personal Site Architecture 靜態個人網頁架構
 tags: [web, static-site, frontend, zero-dependency, build-tooling]
 status: learning

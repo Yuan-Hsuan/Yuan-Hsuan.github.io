@@ -721,7 +721,8 @@ def ai_notes_html(cards):
             '    </div>\n  </section>')
 
 
-DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge", "frontend": "Frontend"}
+DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge",
+                 "software-engineering": "Software Eng"}
 
 
 def log_html(cards, solved):
@@ -1498,7 +1499,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tagSel=$('f-tag');
   TAGS.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
   const diffPill=d=>d?'<span class="pill diff-'+d+'">'+d+'</span>':'';
-  const DOM_LABEL={leetcode:'LeetCode',ai:'AI',frontend:'Frontend'};
+  const DOM_LABEL={leetcode:'LeetCode',ai:'AI','software-engineering':'Software Eng'};
   const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(DOM_LABEL[d]||d)+'</span>';
   function tileHTML(c,i){
     return '<article class="tile" id="card-'+c.id+'" data-id="'+c.id+'" tabindex="0" role="button" '
