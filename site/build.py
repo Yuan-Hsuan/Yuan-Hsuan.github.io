@@ -39,15 +39,15 @@ WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")             # [[note]] links, Obsidia
 # ---- curated picks (section 01 — DESIGN.md §6) --------------------------------
 # id must exist in the collected cards; missing ids are skipped gracefully.
 CURATED = [
-    dict(id="ai-backprop", meta="AI / CS224n · Note 05",
-         why="Deriving the gradients on paper before letting PyTorch do it — with the "
-             "shape-checking habit that catches most of my bugs."),
+    dict(id="ai-count-svd", meta="AI / CS224n · Note 02",
+         why="The full derivation of why SVD works, verified in numpy — and the mistake "
+             "I actually made (the word vector is U·S, not U) turned into the core warning."),
     dict(id="lc-largest-rectangle-in-histogram", meta="LeetCode 84 · Hard",
          why="The monotonic-stack invariant, built up from the O(n²) version — how a "
              "trick becomes a reusable pattern."),
-    dict(id="lc-median-of-two-sorted-arrays", meta="LeetCode 4 · Hard",
-         why="Binary search on the partition, not the value — including the off-by-one "
-             "traps I fell into first."),
+    dict(id="static-site-architecture", meta="Software engineering · This site",
+         why="Why this site is one Python file with zero dependencies — build time vs "
+             "runtime, and when not to reach for a framework."),
 ]
 
 # ---- experience (section 02 — web-native résumé, DESIGN.md §6) ----------------
@@ -76,13 +76,19 @@ EXPERIENCE = [
          bullets=[
             'Cut manual test setup by <b>43%</b> with a full-stack device-management '
             'platform (React + Node.js) — remote chip power-cycling from the browser.']),
-    dict(when="Mar 2021 — Dec 2023", org="Broadcom",
+    dict(when="Jun 2022 — Dec 2023 · Hsinchu", org="Broadcom",
          role="Software Engineer",
          bullets=[
             'Led an automation suite that modulates chip voltage from real-time thermal '
             'and network data — <b>27% better power efficiency</b>.',
             'Automated IC programming (Python + Bash, Linux) with hardened firmware '
             'deployment — <b>45% less manual programming time</b>.']),
+    dict(when="Mar 2021 — Jun 2022 · Hsinchu", org="Broadcom",
+         role="Software Engineer Intern (Co-op)",
+         bullets=[
+            'Built a Python GUI running power-delivery-network (PDN) analysis from a '
+            'loaded BOM — <b>halved per-run setup time</b> across ~4–5 boards a week; '
+            'converted to full-time.']),
 ]
 
 # Education lives as one quiet line in the pinned intro column, not a timeline entry.
@@ -451,7 +457,9 @@ def esc(s):
 def hero_html(cards, solved):
     n_ai = sum(1 for c in cards if c["domain"] == "ai")
     n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
+    n_se = sum(1 for c in cards if c["domain"] == "software-engineering")
     total = (solved or {}).get("counts", {}).get("total", 0)
+    user = (solved or {}).get("username", GITHUB_USER)
     return f"""
   <header class="hero2" id="top">
     <div class="hero2-left">
@@ -469,7 +477,14 @@ def hero_html(cards, solved):
         </div>
         <div class="vdiv" aria-hidden="true"></div>
         <div class="sgroup">
-          <div class="sl">LeetCode</div>
+          <div class="sl">Software engineering</div>
+          <div class="srow">
+            <div class="stat"><div class="n odo" data-n="{n_se}">0</div><div class="l">write-ups</div></div>
+          </div>
+        </div>
+        <div class="vdiv" aria-hidden="true"></div>
+        <div class="sgroup">
+          <div class="sl">LeetCode · <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">profile ↗</a></div>
           <div class="srow">
             <div class="stat"><div class="n odo" data-n="{total}">0</div><div class="l">solved</div></div>
             <div class="stat"><div class="n odo" data-n="{n_lc}">0</div><div class="l">write-ups</div></div>
@@ -536,10 +551,10 @@ def experience_html():
         <div class="xp-left">
           <p class="kicker"><span class="idx">02</span><span class="dec">Experience</span></p>
           <h2>Systems engineer,<br>moving into AI infrastructure.</h2>
-          <p class="pitch">“I don’t want to train the models — I want to build the
+          <p class="pitch">“I want to build the
           engine that makes them fast and reliable.”</p>
           <div class="xp-cta">
-            <a class="btn primary" href="{LINKEDIN_URL}" target="_blank" rel="noopener">Full history on LinkedIn ↗</a>
+            <a class="btn primary" href="{LINKEDIN_URL}" target="_blank" rel="noopener">Connect me on LinkedIn ↗</a>
           </div>
           <p class="xp-edu">{EDUCATION_LINE}</p>
         </div>
@@ -652,6 +667,8 @@ def system_html():
         path=CS224N_NOTES / "05-backprop-matrix-calculus.md", hl=_hl_md)
     add("schema", "SCHEMA.md", "SCHEMA.md — the metadata contract both repos share",
         path=ROOT / "SCHEMA.md", hl=_hl_md)
+    add("readme", "site/README.md", "site/README.md — how this generator works",
+        path=ROOT / "site" / "README.md", hl=_hl_md)
     src = Path(__file__).read_text(encoding="utf-8").splitlines()
     belt = next((i for i, l in enumerate(src) if "SAFETY BELT" in l and "if meta" in l), None)
     if belt is not None:
@@ -726,37 +743,17 @@ DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge",
 
 
 def log_html(cards, solved):
-    n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
     dom_opts = "".join(
         f'<option value="{esc(d)}">{esc(DOMAIN_LABELS.get(d, d.title()))}</option>'
         for d in sorted({c["domain"] for c in cards}))
-    c = (solved or {}).get("counts", {})
-    total, e, m, h = (c.get(k, 0) for k in ("total", "easy", "medium", "hard"))
-    user = (solved or {}).get("username", GITHUB_USER)
-    bar = ""
-    if total:
-        bar = f"""
-      <div class="diffbar" role="img" aria-label="Difficulty split: {e} easy, {m} medium, {h} hard">
-        <span class="e" style="flex:{e}"></span><span class="m" style="flex:{m}"></span><span class="h" style="flex:{h}"></span>
-      </div>
-      <div class="difflab rv">
-        <span><span class="dot" style="background:var(--easy)"></span>Easy {e}</span>
-        <span><span class="dot" style="background:var(--medium)"></span>Medium {m}</span>
-        <span><span class="dot" style="background:var(--hard)"></span>Hard {h}</span>
-      </div>"""
     return f"""
   <section class="band" id="log">
     <div class="wrap wide">
-      <div class="split loghead">
-        <div class="sec-head rv">
-          <p class="kicker"><span class="idx">06</span><span class="dec">Practice log</span></p>
-          <h2>The daily reps.</h2>
-          <p>{total} solved is volume; the {n_lc} write-ups are the point. Click a card to read.</p>
-        </div>
-        <div class="rv">
-          <div class="lc-inline"><span><b>{total}</b> solved</span><span><b>{n_lc}</b> write-ups</span>
-            <a href="https://leetcode.com/u/{user}/" target="_blank" rel="noopener">leetcode.com/u/{user} ↗</a></div>{bar}
-        </div>
+      <div class="sec-head rv">
+        <p class="kicker"><span class="idx">06</span><span class="dec">Write-ups</span></p>
+        <h2>Everything, written up.</h2>
+        <p>All {len(cards)} articles — LeetCode patterns, CS224n notes, engineering
+        deep-dives. Click a card to read.</p>
       </div>
       <div class="controls rv">
         <select id="f-domain" aria-label="Filter by domain"><option value="">All domains</option>
@@ -805,7 +802,7 @@ FOOTER = f"""
     <a href="#start" data-sec="start">Start here</a>
     <a href="#xp" data-sec="xp">Résumé</a>
     <a href="#ai" data-sec="ai">AI notes</a>
-    <a href="#log" data-sec="log">Practice log</a>
+    <a href="#log" data-sec="log">Write-ups</a>
     <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
     <a class="ext" href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
   </nav>"""
@@ -906,8 +903,9 @@ h1,h2,h3{text-wrap:balance}
   color:var(--fg)}
 
 /* ---- motion system (DESIGN.md §7) ---- */
-.rv{opacity:0;transform:translateY(14px);
-  transition:opacity .6s var(--ease),transform .6s var(--ease);transition-delay:var(--d,0s)}
+.rv{opacity:0;transform:translateY(10px);
+  transition:opacity .38s var(--ease),transform .38s var(--ease);
+  transition-delay:calc(var(--d,0s)*.6)}
 .rv.in{opacity:1;transform:none}
 .cursor{display:inline-block;width:.55em;height:1em;background:var(--gold);
   vertical-align:text-bottom;animation:blink .9s steps(1,end) infinite}
@@ -922,14 +920,10 @@ h1,h2,h3{text-wrap:balance}
   animation:cue 1.4s steps(7,end) infinite}
 @keyframes cue{from{transform:translate(-50%,-8px);opacity:0}
   50%{opacity:1} to{transform:translate(-50%,6px);opacity:0}}
-.diffbar span{transform:scaleX(0);transform-origin:left;
-  transition:transform .8s var(--ease);transition-delay:var(--d,0s)}
-.diffbar.in span{transform:scaleX(1)}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .rv{opacity:1;transform:none;transition:none}
   .cursor,.ping::after,.cue{animation:none}
-  .diffbar span{transform:none;transition:none}
 }
 
 /* ---- mono metadata voice ---- */
@@ -952,6 +946,7 @@ h1,h2,h3{text-wrap:balance}
 .sgroup{display:flex;flex-direction:column;gap:.5rem}
 .sgroup .sl{font-family:var(--mono);font-size:.62rem;letter-spacing:.09em;
   text-transform:uppercase;color:var(--muted)}
+.sgroup .sl a{color:var(--muted)}
 .srow{display:flex;gap:1.6rem}
 .stat .n{font-family:var(--mono);font-variant-numeric:tabular-nums;
   font-size:1.5rem;font-weight:600;letter-spacing:-.02em;line-height:1.15}
@@ -998,9 +993,6 @@ h1,h2,h3{text-wrap:balance}
 /* ---- two-column section compositions (DESIGN.md §5) ---- */
 .split{display:grid;grid-template-columns:1fr 1.3fr;gap:clamp(2rem,4vw,4.5rem);align-items:start}
 .split .sec-head{margin:0}
-.loghead{margin:0 0 2.2rem;align-items:end}
-.loghead .lc-inline{margin:0 0 1rem}
-.loghead .difflab{margin:0}
 @media(max-width:860px){ .split{grid-template-columns:1fr;gap:1.6rem} }
 
 /* ---- section heads ---- */
@@ -1022,7 +1014,7 @@ h1,h2,h3{text-wrap:balance}
 .cardk{background:var(--panel);border:1px solid #3a3835;border-radius:0;
   padding:1.3rem 1.4rem 1.1rem;display:flex;flex-direction:column;gap:.55rem;
   text-decoration:none;color:#f1eee7;transition:border-color .15s,transform .15s,box-shadow .15s}
-.cardk:hover{text-decoration:none;border-color:var(--gold);transform:translateY(-2px);
+.cardk:hover{text-decoration:none;border-color:var(--gold);
   box-shadow:0 10px 28px rgba(35,35,35,.18)}
 .cardk:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
 .cardk .meta{font-family:var(--mono);font-size:.65rem;letter-spacing:.07em;
@@ -1190,18 +1182,6 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .row .d{font-family:var(--mono);font-size:.7rem;color:var(--muted);
   text-transform:uppercase;letter-spacing:.06em}
 @media(max-width:560px){ .row .d{display:none} }
-.lc-inline{display:flex;gap:1.8rem;align-items:baseline;flex-wrap:wrap;
-  font-family:var(--mono);font-size:.78rem;color:var(--muted);
-  font-variant-numeric:tabular-nums;margin:0 0 1rem}
-.lc-inline b{color:var(--fg);font-weight:600;font-size:1rem}
-.diffbar{display:flex;gap:2px;height:10px;border-radius:0;overflow:hidden;
-  max-width:560px;margin:0 0 .6rem}
-.diffbar span{display:block}
-.diffbar .m{--d:.15s} .diffbar .h{--d:.3s}
-.diffbar .e{background:var(--easy)} .diffbar .m{background:var(--medium)} .diffbar .h{background:var(--hard)}
-.difflab{display:flex;gap:1.6rem;margin:0 0 2rem;font-family:var(--mono);
-  font-size:.7rem;color:var(--muted);flex-wrap:wrap;font-variant-numeric:tabular-nums}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.4em}
 
 /* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
@@ -1214,8 +1194,9 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
   user-select:none;transition:border-color .15s,transform .15s,box-shadow .15s;
   animation:tileIn .45s var(--ease) both;animation-delay:var(--d,0s)}
 @keyframes tileIn{from{opacity:0;transform:translateY(10px)}}
-.tile:hover{border-color:var(--gold);transform:translateY(-2px);
-  box-shadow:0 8px 24px rgba(35,35,35,.07)}
+/* no transform on hover — a lift moves the edge away from the cursor and
+   causes a hover/unhover flicker loop at the boundary. Border + shadow only. */
+.tile:hover{border-color:var(--gold);box-shadow:0 8px 24px rgba(35,35,35,.07)}
 .tile:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
 .tile .t-top{display:flex;gap:6px;flex-wrap:wrap}
 .tile h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.05rem;line-height:1.35;flex:1}
@@ -1398,7 +1379,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if(e.target.id==='win'){ const p=e.target.querySelector('.code:not([hidden])');
       if(p) p.classList.add('in'); }
     io.unobserve(e.target); } } },{threshold:.2});
-  document.querySelectorAll('.band .rv, footer .rv, .diffbar, .gh-grid, .xp-left .dec').forEach(el=>io.observe(el));
+  document.querySelectorAll('.band .rv, footer .rv, .gh-grid, .xp-left .dec').forEach(el=>io.observe(el));
   const win=$('win'); if(win) io.observe(win);
 
   /* the-system editor: file tree switches real panes, line reveal replays */
@@ -1700,6 +1681,9 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 def main():
     cards = collect()
+    # tile order: AI + engineering notes first, LeetCode write-ups last
+    cards = ([c for c in cards if c["domain"] != "leetcode"]
+             + [c for c in cards if c["domain"] == "leetcode"])
     graph = build_graph(cards)
     solved = load_solved()
     contrib = load_contrib()
