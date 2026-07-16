@@ -213,7 +213,9 @@ from these sources. Never hand-type a count into copy.
 
 **Deliberately rejected (don't re-propose without new evidence):** dark mode; decode/
 glitch text effects; marquees; nav topbar; PDF résumé; rounded instrument blocks;
-traffic-light difficulty colors; JS frameworks.
+traffic-light difficulty colors; JS frameworks; hover-lift transforms on cards/tiles
+(edge flicker loop — twice; hover feedback = border/shadow/ticks only); difficulty
+split bar (E/M/H) as a page element; "case study" style self-referential stat copy.
 
 **Parking lot (fine ideas, not yet earned):** RSS feed from write-ups; a 中文 mirror page;
 OG-image auto-regeneration in CI; auto-refreshing the contribution calendar (evaluated
@@ -249,3 +251,6 @@ rendered in our own style — and keep the "no backend / cookieless / fully-stat
 | 2026-07-07 | Nav tabs renamed to match sections: Start here · Résumé · AI notes · Practice log (Graph tab dropped — the brand is the home link). Project protocol added as CLAUDE.md |
 | 2026-07-09 | Contribution detail: bucket events by LOCAL day (UTC drift bug), label counts as "pushes" not commits (unauthenticated payloads omit the commit list) |
 | 2026-07-09 | Knowledge globe: TOPICS are the first layer — only tags show labels / are clickable at rest. Note dots stay faint, unlabeled, and non-clickable until their topic is selected; problem titles never surface first (data still bipartite, gate is interaction-only) |
+| 2026-07-15 | 06 reframed article-first: kicker/tab "Write-ups", h2 "Everything, written up."; AI/engineering cards sort before LeetCode. LC stats live in the hero only (difficulty bar deleted); hero gains a Software engineering column. `software-engineering` rendered as a first-class domain (honest pill/filter, not mislabeled LeetCode) |
+| 2026-07-15 | Hover lift removed from tiles + cardk (flicker loop at edges) → rejected list. Scroll reveals faster: .38s, delays ×0.6 via calc(). Typewriter speed untouched. Curated picks rotated: SVD note · LC 84 · site architecture (depth × algorithm × judgment) |
+| 2026-07-15 | Résumé synced to resume.md 7/12 overhaul: Broadcom = co-op (Mar 2021–Jun 2022, PDN bullet) + full-time (Jun 2022–Dec 2023), locations on both. Contribution calendar includes private-contribution counts (GitHub setting; counts only, no details) |
