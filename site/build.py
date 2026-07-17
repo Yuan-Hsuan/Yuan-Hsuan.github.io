@@ -657,11 +657,11 @@ def system_html():
         tabs.append((key, label, path_label, note))
         panes.append(_pane(key, lines, start, hl))
 
-    add("note", "leetcode/…/3sum.md", "leetcode/two-pointers/3sum.md — a write-up's source",
-        path=ROOT / "leetcode" / "two-pointers" / "3sum.md", hl=_hl_md)
-    add("note2", "leetcode/…/largest-rectangle.md",
-        "leetcode/array/largest-rectangle-in-histogram.md — a hard write-up's source",
-        path=ROOT / "leetcode" / "array" / "largest-rectangle-in-histogram.md", hl=_hl_md)
+    add("note", "leetcode/15. 3Sum.md", "leetcode/15. 3Sum.md — a write-up's source",
+        path=ROOT / "leetcode" / "15. 3Sum.md", hl=_hl_md)
+    add("note2", "leetcode/84. Largest Rectangle….md",
+        "leetcode/84. Largest Rectangle in Histogram.md — a hard write-up's source",
+        path=ROOT / "leetcode" / "84. Largest Rectangle in Histogram.md", hl=_hl_md)
     add("ainote", "cs224n/…/05-backprop.md",
         "Standford-cs224n-nlp/notes/concepts/05-backprop-matrix-calculus.md — an AI note (sibling repo)",
         path=CS224N_NOTES / "05-backprop-matrix-calculus.md", hl=_hl_md)
