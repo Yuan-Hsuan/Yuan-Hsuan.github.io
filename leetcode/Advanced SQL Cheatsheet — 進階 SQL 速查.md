@@ -4,7 +4,6 @@ domain: leetcode
 title: Advanced SQL Cheatsheet — 進階 SQL 速查
 tags: [sql, database, window-functions, joins]
 difficulty: hard
-status: learning
 mastery: 1
 visibility: public
 source: https://leetcode.com/studyplan/top-sql-50/
