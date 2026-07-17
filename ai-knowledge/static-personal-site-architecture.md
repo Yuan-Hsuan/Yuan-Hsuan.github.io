@@ -3,7 +3,6 @@ id: static-site-architecture
 domain: software-engineering
 title: Static Personal Site Architecture 靜態個人網頁架構
 tags: [web, static-site, frontend, zero-dependency, build-tooling]
-status: learning
 mastery: 2
 source: built my own site (Yuan-Hsuan.github.io/site/build.py)
 visibility: public

@@ -1,8 +1,10 @@
 # LeetCode — practice by pattern 依範式練習
 
 Interviews aren't about memorizing 500 problems — they're about recognizing which of ~12
-**patterns** a problem maps to. Each folder here is one pattern. Each file is one problem with
-its pattern insight, my solution, and a recall prompt. 面試不是背 500 題，而是認出這題屬於哪個範式。
+**patterns** a problem maps to. Notes live flat here, one file per problem (named by its
+LeetCode number + title); the pattern classification lives in each note's `tags` frontmatter,
+since one problem often maps to several patterns. Each file holds the pattern insight, my
+solution, and a recall prompt. 面試不是背 500 題，而是認出這題屬於哪個範式。
 
 ## The core patterns 核心範式
 

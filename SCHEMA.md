@@ -20,7 +20,6 @@ domain: leetcode            # REQUIRED. leetcode | ai | bq | system-design
 title: Two Sum              # REQUIRED. human-readable
 tags: [hash-map, array]     # topics/patterns. drives filtering + grouping
 difficulty: easy            # easy | medium | hard  (leetcode & system-design; omit for bq/ai)
-status: learning            # new | learning | review | mastered
 mastery: 2                  # 0–5 self-rating. 0 = just saw it, 5 = could teach it
 last_reviewed: 2026-07-04   # ISO date (YYYY-MM-DD). empty if never reviewed
 next_review: 2026-07-08     # ISO date. COMPUTED by the CLI — don't hand-edit
@@ -45,7 +44,6 @@ visibility: public          # public | private   ← SAFETY BELT (see below)
 |-------|-----------|-------|
 | `id` | you (once) | never changes; used as the stable key across tools |
 | `mastery` | you | your honest self-rating after each review |
-| `status` | you or CLI | lifecycle flag |
 | `last_reviewed` / `next_review` | **CLI only** | spaced-repetition scheduling writes these back |
 | `visibility` | you | `public` only for things safe to show the world |
 
