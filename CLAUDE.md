@@ -35,7 +35,8 @@ which is generated — **never hand-edit it**.
 Everything is `site/build.py` (stdlib only): section builders → HTML/CSS/JS template
 constants → data pipeline (see DESIGN.md §7). Content sources:
 
-- `leetcode/**/*.md` + sibling repo `../Standford-cs224n-nlp/notes/concepts/` (AI notes)
+- `leetcode/**/*.md` + `knowledge/**/*.md` + sibling repo
+  `../Standford-cs224n-nlp/notes/concepts/` (all carry SCHEMA frontmatter)
 - `site/solved.json` (LeetCode API dump), `site/contrib.json` + `site/activity.json`
   (GitHub calendar + events, auto-fetched每次 build、離線用快取)
 - `EXPERIENCE` / `CURATED` constants in `build.py` (résumé + start-here picks;

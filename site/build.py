@@ -29,7 +29,7 @@ from pathlib import Path
 
 # ---- config -----------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent          # repo root
-CONTENT_DIRS = ["leetcode", "ai-knowledge"]            # public domains shown on the site
+CONTENT_DIRS = ["leetcode", "knowledge"]               # public domains shown on the site
 GITHUB_USER = "Yuan-Hsuan"
 LINKEDIN_URL = "https://www.linkedin.com/in/yuan-hsuan-wen/"
 OUT = ROOT / "index.html"
@@ -70,7 +70,8 @@ EXPERIENCE = [
             'so I shrank the problem.”</span>',
             '<b>RAG pipeline</b> (LangChain + Milvus) and a Dockerized REST backend wired '
             'into the internal bug tracker, with a dashboard that visualizes the results.',
-            '<b>~80% of routine triage automated</b>; adopted as a permanent asset.']),
+            '<b>Matched engineers’ own triage calls 82% of the time</b>; adopted as '
+            'a permanent asset.']),
     dict(when="Jun — Aug 2024 · Hsinchu", org="Silicon Motion",
          role="Verification Engineer Intern",
          bullets=[
@@ -97,22 +98,11 @@ EDUCATION_LINE = "M.S. Computer Science — USC (2024–25) · B.S. ECE, minor C
 # ---- external AI notes (single source of truth: the CS224n study repo) -------
 # The notes live in the sibling repo; we read them at build time so the site is
 # never a stale copy — edit the note there, re-run build.py, done. (Images are
-# copied into ROOT/imgs so GitHub Pages can serve them.)
+# copied into ROOT/imgs so GitHub Pages can serve them.) The notes carry the
+# same SCHEMA.md frontmatter as everything else — the visibility safety belt
+# and the CLI's mastery write-back apply to them like any other card.
 CS224N_NOTES = ROOT.parent / "Standford-cs224n-nlp" / "notes" / "concepts"
 CS224N_SOURCE = "https://web.stanford.edu/class/cs224n/"
-CS224N_META = {
-    "01-word-embeddings.md":        dict(id="ai-word-embeddings", title="Word Embeddings (one-hot → dense)",
-        tags=["nlp", "embeddings", "word-vectors"], difficulty="easy", mastery=3),
-    "02-count-based-svd.md":        dict(id="ai-count-svd", title="Count-Based Word Vectors (SVD)",
-        tags=["nlp", "svd", "co-occurrence", "embeddings", "linear-algebra"], difficulty="medium", mastery=3),
-    "03-word2vec-and-glove.md":     dict(id="ai-word2vec-glove", title="word2vec & GloVe",
-        tags=["nlp", "word2vec", "glove", "embeddings", "negative-sampling"], difficulty="medium", mastery=3),
-    "04-neural-nets-ner.md":        dict(id="ai-neural-nets-ner", title="Neural Nets: NER & Non-linearities",
-        tags=["nlp", "neural-networks", "ner", "non-linearities"], difficulty="medium", mastery=2),
-    "05-backprop-matrix-calculus.md": dict(id="ai-backprop", title="Backprop & Matrix Calculus",
-        tags=["neural-networks", "backpropagation", "gradients", "matrix-calculus", "deep-learning"],
-        difficulty="medium", mastery=2),
-}
 
 
 # ---- frontmatter parsing ----------------------------------------------------
@@ -276,26 +266,35 @@ def strip_note_front(text: str):
 
 def external_ai_cards():
     """Read the CS224n notes from the sibling repo at build time (single source of
-    truth) and turn each into an AI card. Returns [] if the repo isn't next door."""
+    truth) and turn each into an AI card. Metadata comes from each note's own
+    SCHEMA frontmatter, so the visibility safety belt applies here too and the
+    CLI's mastery write-back is what the site renders. Returns [] if the repo
+    isn't next door."""
     if not CS224N_NOTES.exists():
         return []
     (ROOT / "imgs").mkdir(exist_ok=True)                          # copy note images for Pages
     for img in (CS224N_NOTES / "imgs").glob("*.png"):
         shutil.copy(img, ROOT / "imgs" / img.name)
     cards = []
-    for fname, m in CS224N_META.items():
-        path = CS224N_NOTES / fname
-        if not path.exists():
+    for path in sorted(CS224N_NOTES.glob("*.md")):
+        if path.name.lower() in ("readme.md", "_template.md"):
             continue
-        text = path.read_text(encoding="utf-8")
-        body = strip_note_front(text)                            # drop title + header + Contents
+        meta, body = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if meta.get("visibility") != "public":                    # SAFETY BELT
+            continue
+        domain = meta.get("domain", "ai")
+        title = meta.get("title", path.stem)
+        tags = meta.get("tags", []) if isinstance(meta.get("tags"), list) else []
+        body = strip_note_front(body)                            # drop title + header + Contents
         body = WIKILINK.sub(r"\1", body)                          # strip [[ ]] the site can't resolve
         cards.append({
-            "id": m["id"], "domain": "ai", "title": m["title"],
-            "label": short_label("ai", m["title"]), "tags": m["tags"],
-            "difficulty": m["difficulty"], "mastery": m["mastery"],
+            "id": meta.get("id", path.stem), "domain": domain, "title": title,
+            "label": short_label(domain, title), "tags": tags,
+            "difficulty": meta.get("difficulty", ""),
+            "mastery": int(meta.get("mastery", 0) or 0),
             "words": len(re.sub(r"```.*?```", " ", body, flags=re.S).split()),
-            "related": [], "source": CS224N_SOURCE, "body_html": render_body(body),
+            "related": [], "source": meta.get("source", CS224N_SOURCE),
+            "body_html": render_body(body),
         })
     return cards
 

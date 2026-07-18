@@ -8,20 +8,23 @@ solution, and a recall prompt. 面試不是背 500 題，而是認出這題屬�
 
 ## The core patterns 核心範式
 
-| pattern | signal it fits 什麼時候用 | seeded |
-|---------|--------------------------|--------|
-| **hash-map** | need O(1) lookup of "have I seen X / its complement" | ✅ two-sum |
-| **two-pointers** | sorted array, pair/triplet, in-place from both ends | ✅ valid-palindrome |
-| **sliding-window** | longest/shortest contiguous subarray/substring under a constraint | ✅ longest-substring |
-| **binary-search** | sorted (or monotonic answer space), find boundary/target in O(log n) | ✅ binary-search |
-| **bfs-dfs** | trees/graphs, shortest path (BFS), connected components (DFS) | — |
-| **dynamic-programming** | "count ways / min-max" with overlapping subproblems | — |
-| **heap** | top-K, streaming median, merge K sorted | — |
-| **intervals** | overlapping ranges, merge/insert/schedule | — |
-| **stack** | matching pairs, next-greater-element, monotonic stack | — |
-| **linked-list** | in-place reversal, fast/slow pointers (cycle) | — |
-| **backtracking** | generate all permutations/subsets/combinations | — |
-| **greedy** | locally-optimal choice provably gives global optimum | — |
+| pattern | signal it fits 什麼時候用 |
+|---------|--------------------------|
+| **hash-map** | need O(1) lookup of "have I seen X / its complement" |
+| **two-pointers** | sorted array, pair/triplet, in-place from both ends |
+| **sliding-window** | longest/shortest contiguous subarray/substring under a constraint |
+| **binary-search** | sorted (or monotonic answer space), find boundary/target in O(log n) |
+| **bfs-dfs** | trees/graphs, shortest path (BFS), connected components (DFS) |
+| **dynamic-programming** | "count ways / min-max" with overlapping subproblems |
+| **heap** | top-K, streaming median, merge K sorted |
+| **intervals** | overlapping ranges, merge/insert/schedule |
+| **stack** | matching pairs, next-greater-element, monotonic stack |
+| **linked-list** | in-place reversal, fast/slow pointers (cycle) |
+| **backtracking** | generate all permutations/subsets/combinations |
+| **greedy** | locally-optimal choice provably gives global optimum |
+
+(Which patterns already have write-ups is visible on the site's practice log filters —
+the notes' `tags` are the source of truth, no hand-kept column here.)
 
 ## How I use this 我怎麼用
 

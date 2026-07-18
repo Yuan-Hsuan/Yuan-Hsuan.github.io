@@ -168,7 +168,7 @@ from these sources. Never hand-type a count into copy.
 - Tiles keyboard-operable (`role=button`, Enter/Space); tree is a `tablist`.
 - Inputs ≥16px font (iOS zoom); hover effects wrapped in `@media (hover:hover)`.
 - Canvas globe has the write-up lists as its text alternative; HUD readout is text.
-- Keep `index.html` under ~400 KB (now ~260 KB). Budget breakers → see §9.
+- Keep `index.html` under ~400 KB (now ~320 KB). Budget breakers → see §9.
 - Keep: OG card, JSON-LD Person, sitemap, robots, canonical, GoatCounter (cookieless).
 
 ## 9. Scaling playbook（內容變多/要改進時，照這裡做）
@@ -188,8 +188,9 @@ from these sources. Never hand-type a count into copy.
   the criterion is "shows how I think", not recency or difficulty.
 
 **AI notes 5 → more / new course**
-- Keep reading from the sibling repo while CS224n is active; when it ends, move final
-  notes into `ai-knowledge/` (already scanned) and retire `CS224N_META` gradually.
+- Keep reading from the sibling repo while CS224n is active — the notes carry standard
+  SCHEMA frontmatter (`CS224N_META` retired 2026-07-17); when the course ends, move the
+  final notes into `knowledge/` (already scanned).
 - ≥10 AI notes: give section 05 the same filter row as the practice log.
 
 **New domain (system-design, `sd-` per SCHEMA.md)**

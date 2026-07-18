@@ -1,9 +1,15 @@
-# ai-knowledge — my public learning notes 公開學習筆記
+# knowledge — my public learning notes 公開學習筆記
 
-Durable notes from lectures / YouTube / reading. Each note here, when `visibility: public`,
-becomes **(1)** a card in the site's **AI notes** section and **(2)** a node on the homepage
-**knowledge globe** — clustered by its `tags`, linked to related notes by `[[wikilinks]]`.
-So this folder *is* my visual knowledge map, published. 這個資料夾就是我「發佈出去」的知識地圖。
+Durable notes from lectures / YouTube / reading — any domain (`domain:` in the
+frontmatter says which: `ai`, `software-engineering`, …). Each note here, when
+`visibility: public`, becomes **(1)** a card in the site's notes section and **(2)** a node
+on the homepage **knowledge globe** — clustered by its `tags`, linked to related notes by
+`[[wikilinks]]`. So this folder *is* my visual knowledge map, published.
+這個資料夾就是我「發佈出去」的知識地圖。
+
+(The CS224n concept notes live in their own repo — `../Standford-cs224n-nlp/notes/concepts/`
+— and reach the site the same way at build time; new domains don't need new folders here,
+just a `domain:` value.)
 
 ## When I learn something new 學到新東西時
 

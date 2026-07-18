@@ -16,7 +16,7 @@ folders stay separate for humans, but unified for the tools (CLI + site generato
 ```yaml
 ---
 id: lc-two-sum              # REQUIRED. unique slug. prefix by domain: lc- / ai- / bq- / sd-
-domain: leetcode            # REQUIRED. leetcode | ai | bq | system-design
+domain: leetcode            # REQUIRED. leetcode | ai | software-engineering | bq | system-design
 title: Two Sum              # REQUIRED. human-readable
 tags: [hash-map, array]     # topics/patterns. drives filtering + grouping
 difficulty: easy            # easy | medium | hard  (leetcode & system-design; omit for bq/ai)
@@ -30,8 +30,9 @@ visibility: public          # public | private   ← SAFETY BELT (see below)
 
 ### The `visibility` safety belt 安全帶
 
-- The **site generator only renders `visibility: public`** files.
-- Anything in `prep-private/` is `visibility: private`.
+- The **site generator only renders `visibility: public`** files — including the CS224n
+  concept notes it reads from the sibling repo.
+- Everything in `mind/` defaults to `visibility: private`.
 - Even if a private file is ever misplaced into the public repo, the site will **not**
   render it. Defense in depth — never rely on the folder alone.
 - 網站產生器**只渲染 `visibility: public`**。就算私密檔案手滑跑進公開 repo，也不會被渲染出來。

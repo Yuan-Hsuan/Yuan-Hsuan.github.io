@@ -19,8 +19,9 @@ Both repos share one metadata contract — see [`SCHEMA.md`](./SCHEMA.md).
 - **`leetcode/`** — solved problems grouped by pattern. Each is one markdown file with
   the problem, the pattern insight, my solution, and complexity. Steady commits here also
   grow my GitHub contribution graph. 持續 commit = 綠格 + 練習紀錄。
-- **`ai-knowledge/`** — my AI / ML concept notes (some grown from Stanford CS224n).
-- **`site/`** — the static site generator: walks `leetcode/` + `ai-knowledge/` and builds
+- **`knowledge/`** — my public learning notes, any domain (`domain:` frontmatter — AI,
+  software engineering, …); the CS224n concept notes live in their own repo and join at build time.
+- **`site/`** — the static site generator: walks `leetcode/` + `knowledge/` and builds
   `index.html`. No backend, no database — pure static, served free by GitHub Pages.
 
 ## Why "learning in public"？

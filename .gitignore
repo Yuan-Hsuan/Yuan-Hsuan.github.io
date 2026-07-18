@@ -4,4 +4,6 @@ __pycache__/
 .venv/
 venv/
 node_modules/
+# Course/reference PDFs kept locally under knowledge/ — never publish (copyright + not her own work).
+knowledge/**/*.pdf
 # Site build output is committed (GitHub Pages serves it) — do NOT ignore index.html/assets.
