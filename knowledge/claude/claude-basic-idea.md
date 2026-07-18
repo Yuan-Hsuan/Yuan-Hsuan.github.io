@@ -1,7 +1,7 @@
 ---
 id: ai-claude-basic-idea
 domain: ai
-title: The Basic Idea of Claude — Assistant, Not a Chatbox（Claude 的基本概念）
+title: The Basic Idea of Claude — Assistant, Not a Chatbox
 tags: [claude, ai-assistant, agents, llm-products]
 mastery: 1
 source: https://anthropic.skilljar.com/claude-101/
@@ -35,5 +35,5 @@ the same question and it **runs `ls`, reads the files, and answers from evidence
 same model, different tools, completely different usefulness.
 
 ## Recall prompt
-Why is "Claude is an assistant, not a chatbox" more than a slogan? Name three surfaces
-Claude ships in, and explain what changes between them if the model is the same.
+> Why is "Claude is an assistant, not a chatbox" more than a slogan? Name three surfaces
+> Claude ships in, and explain what changes between them if the model is the same.

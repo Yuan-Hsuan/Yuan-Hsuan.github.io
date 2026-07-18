@@ -1,10 +1,10 @@
 ---
 id: ai-fluency
 domain: ai
-title: AI Fluency — Knowing What AI Can and Can't Do（AI 素養，不是 prompt 技巧）
+title: AI Fluency — Knowing What AI Can and Can't Do
 tags: [claude, ai-fluency, ai-assistant, judgment]
 mastery: 1
-source: https://anthropic.skilljar.com/claude-101/
+source: https://anthropic.skilljar.com/ai-fluency-framework-foundations/
 visibility: public
 ---
 
@@ -34,3 +34,7 @@ whether the output is any good. Building these notes used all four — I *delega
 drafting, *described* the task with a clear brief, *discerned* by fact-checking the model
 specs it gave me before trusting them, and stayed *diligent* by keeping private data off
 the public site and citing the source.
+
+## Recall prompt
+> Name the three modes of working with AI and the 4D framework. Once you can already prompt
+> well, which two Ds matter most — and why?
