@@ -243,6 +243,7 @@ def collect():
                 "mastery": int(meta.get("mastery", 0) or 0),
                 "words": len(re.sub(r"```.*?```", " ", body, flags=re.S).split()),
                 "related": related,
+                "source": str(meta.get("source", "") or ""),
                 "body_html": render_body(body),
             })
     cards.extend(external_ai_cards())
@@ -454,7 +455,11 @@ def esc(s):
 
 
 def hero_html(cards, solved):
-    n_ai = sum(1 for c in cards if c["domain"] == "ai")
+    n_cs = sum(1 for c in cards if c["domain"] == "ai"
+               and c.get("source") == CS224N_SOURCE)
+    n_claude = sum(1 for c in cards if c["domain"] == "ai"
+                   and c.get("source") != CS224N_SOURCE)
+    n_sys = sum(1 for c in cards if c["domain"] == "systems")
     n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
     n_se = sum(1 for c in cards if c["domain"] == "software-engineering")
     total = (solved or {}).get("counts", {}).get("total", 0)
@@ -468,17 +473,18 @@ def hero_html(cards, solved):
       The practice, logged honestly — mistakes included.</p>
       <div class="stats rv" style="--d:.45s">
         <div class="sgroup">
-          <div class="sl">AI / CS224n</div>
+          <div class="sl">AI</div>
           <div class="srow">
-            <div class="stat"><div class="n odo" data-n="{n_ai}">0</div><div class="l">deep notes</div></div>
-            <div class="stat"><div class="n">minBERT</div><div class="l">in progress</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_cs}">0</div><div class="l">cs224n notes</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_claude}">0</div><div class="l">claude courses</div></div>
           </div>
         </div>
         <div class="vdiv" aria-hidden="true"></div>
         <div class="sgroup">
-          <div class="sl">Software engineering</div>
+          <div class="sl">Systems / SWE</div>
           <div class="srow">
-            <div class="stat"><div class="n odo" data-n="{n_se}">0</div><div class="l">write-ups</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_sys}">0</div><div class="l">os · network</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_se}">0</div><div class="l">engineering</div></div>
           </div>
         </div>
         <div class="vdiv" aria-hidden="true"></div>
@@ -721,24 +727,30 @@ def ai_notes_html(cards):
     ai = [c for c in cards if c["domain"] == "ai"]
     if not ai:
         return ""
+    # theory track (cs224n) first, tool track (claude courses) after
+    ai = ([c for c in ai if c.get("source") == CS224N_SOURCE]
+          + [c for c in ai if c.get("source") != CS224N_SOURCE])
     rows = []
     for i, c in enumerate(ai):
+        track = "cs224n" if c.get("source") == CS224N_SOURCE else "claude 101"
         rows.append(
             f'<a class="row rv" style="--d:{i*0.06:.2f}s" href="#card-{esc(c["id"])}" '
             f'onclick="expandCard(\'{esc(c["id"])}\');return false;">'
             f'<span class="i">{i+1:02d}</span><span class="t">{esc(c["title"])}</span>'
-            f'<span class="d">cs224n</span></a>')
+            f'<span class="d">{track}</span></a>')
     return ('\n  <section class="band" id="ai">\n    <div class="wrap wide split">\n'
             '      <div class="sec-head rv">\n'
             '        <p class="kicker"><span class="idx">05</span><span class="dec">AI notes</span></p>\n'
-            '        <h2>Stanford CS224n, worked through by hand.</h2>\n'
-            '        <p>Written after doing the math and the PyTorch — not slide summaries.</p>\n'
+            '        <h2>Theory by hand, tools by habit.</h2>\n'
+            '        <p>Stanford CS224n worked through on paper — the math before the PyTorch. '
+            'And Anthropic’s Claude courses, because I build with AI every day, '
+            'so I study how to drive it well.</p>\n'
             '      </div>\n      <div class="rows">' + "".join(rows) + '</div>\n'
             '    </div>\n  </section>')
 
 
 DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge",
-                 "software-engineering": "Software Eng"}
+                 "software-engineering": "Software Eng", "systems": "Systems"}
 
 
 def log_html(cards, solved):
@@ -1479,7 +1491,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tagSel=$('f-tag');
   TAGS.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
   const diffPill=d=>d?'<span class="pill diff-'+d+'">'+d+'</span>':'';
-  const DOM_LABEL={leetcode:'LeetCode',ai:'AI','software-engineering':'Software Eng'};
+  const DOM_LABEL={leetcode:'LeetCode',ai:'AI','software-engineering':'Software Eng',systems:'Systems'};
   const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(DOM_LABEL[d]||d)+'</span>';
   function tileHTML(c,i){
     return '<article class="tile" id="card-'+c.id+'" data-id="'+c.id+'" tabindex="0" role="button" '
