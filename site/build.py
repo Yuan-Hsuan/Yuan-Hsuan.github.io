@@ -18,6 +18,7 @@ Usage:
     python site/build.py
 """
 from __future__ import annotations
+import hashlib
 import html
 import json
 import re
@@ -345,6 +346,14 @@ def build_graph(cards):
                     seen.add(e)
                     edges.append([e[0], e[1]])
 
+    # Scatter node order by a stable hash: the JS fibonacci sphere maps array index
+    # to latitude, so a notes-then-tags list makes each type clump into its own band
+    # (notes packed at the top). A deterministic shuffle mixes types evenly.
+    order = sorted(range(len(nodes)),
+                   key=lambda i: hashlib.md5(nodes[i]["id"].encode()).hexdigest())
+    remap = {old: new for new, old in enumerate(order)}
+    nodes = [nodes[i] for i in order]
+    edges = [[remap[a], remap[b]] for a, b in edges]
     return {"nodes": nodes, "edges": edges}
 
 
@@ -1604,7 +1613,9 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const front=(n.pz+1)/2;
       let a;
       if(focus){ a = (n===focus||isNbr(focus,n)) ? 1 : 0.05; }
-      else if(n.type==='tag'){ a = 0.22+0.6*front; }
+      else if(n.type==='tag'){
+        if((n.count||0)<2) continue;          // singleton topics: label on focus only
+        a = 0.22+0.6*front; }
       else continue;                          // notes stay unlabeled until a topic is focused
       if(a<=0.06) continue;
       const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
