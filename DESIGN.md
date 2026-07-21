@@ -218,7 +218,17 @@ traffic-light difficulty colors; JS frameworks; hover-lift transforms on cards/t
 (edge flicker loop — twice; hover feedback = border/shadow/ticks only); difficulty
 split bar (E/M/H) as a page element; "case study" style self-referential stat copy.
 
-**Parking lot (fine ideas, not yet earned):** RSS feed from write-ups; a 中文 mirror page;
+**Parking lot (fine ideas, not yet earned):**
+
+- **Globe clustering（user asked 2026-07-16 — REMIND her when triggered）:** when the graph
+  passes **~200 nodes** (or the domain clusters become visually inseparable — today: 140),
+  reorganize the globe by category: spatial grouping per domain (systems / AI / LeetCode
+  each own a region, e.g. longitude sectors or community-force layout like her reference
+  `~/github/design-refs/graph-viz-node-link-layouts-reference.jpg` panel (c)), and/or a
+  domain color accent within the monochrome ramp. Check node count on every build that
+  adds notes; when the threshold nears, proactively propose the redesign.
+
+Also parked: RSS feed from write-ups; a 中文 mirror page;
 OG-image auto-regeneration in CI; auto-refreshing the contribution calendar (evaluated
 2026-07-08 → **not yet**: the streak is young and the calendar already refreshes on any
 real rebuild, so effort belongs on content. When it's earned, do NOT ship the naive
@@ -255,5 +265,6 @@ rendered in our own style — and keep the "no backend / cookieless / fully-stat
 | 2026-07-15 | 06 reframed article-first: kicker/tab "Write-ups", h2 "Everything, written up."; AI/engineering cards sort before LeetCode. LC stats live in the hero only (difficulty bar deleted); hero gains a Software engineering column. `software-engineering` rendered as a first-class domain (honest pill/filter, not mislabeled LeetCode) |
 | 2026-07-15 | Hover lift removed from tiles + cardk (flicker loop at edges) → rejected list. Scroll reveals faster: .38s, delays ×0.6 via calc(). Typewriter speed untouched. Curated picks rotated: SVD note · LC 84 · site architecture (depth × algorithm × judgment) |
 | 2026-07-16 | Systems notes published (9 OS + 5 networking, three merges); `systems` first-class domain; hero = three groups (AI cs224n/claude split · Systems/SWE · LeetCode); AI section "Theory by hand, tools by habit." with per-row track labels |
+| 2026-07-20 | Curated pick #1 = ai-dev-workflow (AI building method); trio now workflow × LC 84 × site architecture (3 domains). `[[wikilink]]` cross-refs now resolve to clickable card-openers site-wide (`resolve_wikilinks`); dangling ones degrade to plain text |
 | 2026-07-16 | Globe fix: node order scattered by stable md5 hash — index-ordered fibonacci sphere had clumped notes/tags into latitude bands (notes packed at top). Resting labels only for topics with ≥2 notes; singletons name themselves on focus |
 | 2026-07-15 | Résumé synced to resume.md 7/12 overhaul: Broadcom = co-op (Mar 2021–Jun 2022, PDN bullet) + full-time (Jun 2022–Dec 2023), locations on both. Contribution calendar includes private-contribution counts (GitHub setting; counts only, no details) |

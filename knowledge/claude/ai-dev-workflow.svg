@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" role="img" aria-label="AI dev workflow: explore, spec, plan before any code, then a build, verify, commit loop one chunk at a time">
+  <defs>
+    <marker id="mInk" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#232323"/>
+    </marker>
+    <marker id="mGold" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#d6a878"/>
+    </marker>
+    <marker id="mGray" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#79746a"/>
+    </marker>
+  </defs>
+
+  <!-- cream plate -->
+  <rect x="12" y="12" width="936" height="596" fill="#f1eee7"/>
+
+  <!-- crop-mark corner ticks, outside the plate (gold) -->
+  <g stroke="#d6a878" stroke-width="2">
+    <line x1="2"   y1="12"  x2="9"   y2="12"/>  <line x1="12"  y1="2"   x2="12"  y2="9"/>
+    <line x1="951" y1="12"  x2="958" y2="12"/>  <line x1="948" y1="2"   x2="948" y2="9"/>
+    <line x1="2"   y1="608" x2="9"   y2="608"/> <line x1="12"  y1="611" x2="12"  y2="618"/>
+    <line x1="951" y1="608" x2="958" y2="608"/> <line x1="948" y1="611" x2="948" y2="618"/>
+  </g>
+
+  <!-- effort bracket over the pre-code phases -->
+  <text x="480" y="50" text-anchor="middle" font-size="11" letter-spacing="1" fill="#79746a">~1/3 OF TOTAL EFFORT HAPPENS HERE — BEFORE ANY CODE</text>
+  <path d="M60,72 v-8 H900 v8" fill="none" stroke="#79746a" stroke-width="1"/>
+
+  <!-- row 1: before any code -->
+  <g>
+    <rect x="60" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="75" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 01 · EXPLORE</text>
+    <text x="75" y="144" font-size="14" font-weight="bold" fill="#232323">Read the code first</text>
+    <text x="75" y="168" font-size="10.5" fill="#79746a">trace deps · find prior art</text>
+    <text x="75" y="188" font-size="10.5" fill="#79746a">write nothing yet</text>
+  </g>
+  <line x1="310" y1="150" x2="347" y2="150" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
+  <g>
+    <rect x="355" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="370" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 02 · SPEC</text>
+    <text x="370" y="144" font-size="14" font-weight="bold" fill="#232323">AI interviews you → spec.md</text>
+    <text x="370" y="168" font-size="10.5" fill="#79746a">one question at a time · 20–30 min</text>
+    <text x="370" y="188" font-size="10.5" fill="#79746a">stop: a stranger could build it</text>
+  </g>
+  <line x1="605" y1="150" x2="642" y2="150" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
+  <g>
+    <rect x="650" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="665" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 03 · PLAN</text>
+    <text x="665" y="144" font-size="14" font-weight="bold" fill="#232323">Right-size the chunks</text>
+    <text x="665" y="168" font-size="10.5" fill="#79746a">small enough to test safely</text>
+    <text x="665" y="188" font-size="10.5" fill="#79746a">big enough to move forward</text>
+  </g>
+
+  <!-- into the loop -->
+  <path d="M775,210 V250 H165 V292" fill="none" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
+  <text x="480" y="242" text-anchor="middle" font-size="10" fill="#79746a">first chunk</text>
+
+  <!-- the loop -->
+  <rect x="44" y="270" width="872" height="230" fill="none" stroke="#79746a" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <g>
+    <rect x="60" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="75" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 04 · BUILD</text>
+    <text x="75" y="364" font-size="14" font-weight="bold" fill="#232323">Build ONE chunk only</text>
+    <text x="75" y="388" font-size="10.5" fill="#79746a">deterministic bits → script, not AI</text>
+    <text x="75" y="408" font-size="10.5" fill="#79746a">spend the model on reasoning</text>
+  </g>
+  <line x1="310" y1="370" x2="347" y2="370" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
+  <g>
+    <rect x="355" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="370" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 05 · VERIFY</text>
+    <text x="370" y="364" font-size="14" font-weight="bold" fill="#232323">Machine check + your eyes</text>
+    <text x="370" y="388" font-size="10.5" fill="#79746a">tests · lint · screenshot · numbers</text>
+    <text x="370" y="408" font-size="10.5" fill="#79746a">then read the diff yourself</text>
+  </g>
+  <text x="623" y="360" text-anchor="middle" font-size="10" font-weight="bold" fill="#232323">pass</text>
+  <line x1="605" y1="370" x2="642" y2="370" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
+  <g>
+    <rect x="650" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
+    <text x="665" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 06 · COMMIT</text>
+    <text x="665" y="364" font-size="14" font-weight="bold" fill="#232323">Commit the green chunk</text>
+    <text x="665" y="388" font-size="10.5" fill="#79746a">every green chunk = rollback anchor</text>
+    <text x="665" y="408" font-size="10.5" fill="#79746a">todo empty → ship it</text>
+  </g>
+
+  <!-- next chunk: THE gold moment -->
+  <path d="M775,310 V290 H205 V306" fill="none" stroke="#d6a878" stroke-width="2" marker-end="url(#mGold)"/>
+  <text x="480" y="284" text-anchor="middle" font-size="11" font-weight="bold" fill="#d6a878">next chunk</text>
+
+  <!-- fail loop -->
+  <path d="M485,430 V470 H185 V438" fill="none" stroke="#232323" stroke-width="1.25" stroke-dasharray="5 4" marker-end="url(#mInk)"/>
+  <text x="335" y="462" text-anchor="middle" font-size="10" fill="#79746a">fail → feed the error back, fix, re-verify</text>
+  <text x="56" y="490" font-size="10" letter-spacing="1.5" fill="#79746a">THE LOOP · ONE CHUNK AT A TIME</text>
+
+  <!-- escape hatch -->
+  <text x="480" y="545" text-anchor="middle" font-size="11" fill="#79746a">5th revision still wrong? not a prompt problem — a DELEGATION problem: drop back a phase</text>
+  <path d="M790,541 H930 V150 H910" fill="none" stroke="#79746a" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#mGray)"/>
+</svg>

@@ -22,8 +22,8 @@ It has two halves: three ways to work with AI, and four skills for doing it well
 * **Agency（代理）** — set AI up to act on its own toward a goal (agents), then supervise instead of drive.
 
 ## 3. The 4D framework（四個 D）
-* **Delegation（分派）** — deciding what to do *with* AI vs. yourself. A bad split wastes both.
-* **Description（描述）** — communicating clearly with AI → this is [[ai-good-prompt-structure]].
+* **Delegation（分派）** — deciding what to do *with* AI vs. yourself → this is [[ai-delegation]]. A bad split wastes both.
+* **Description（描述）** — communicating clearly with AI → this is [[ai-description]] (the 3 P's).
 * **Discernment（判斷）** — evaluating output with a critical eye; catching where it's *confidently* wrong.
 * **Diligence（盡責）** — using AI responsibly: privacy, honesty, checking before you ship.
 
@@ -34,6 +34,10 @@ whether the output is any good. Building these notes used all four — I *delega
 drafting, *described* the task with a clear brief, *discerned* by fact-checking the model
 specs it gave me before trusting them, and stayed *diligent* by keeping private data off
 the public site and citing the source.
+
+## 5. Putting it to work（把四個 D 變成一套流程）
+The applied version of all this — a repeatable Explore → Spec → Build → Verify playbook for
+building anything with AI — is [[ai-dev-workflow]].
 
 ## Recall prompt
 > Name the three modes of working with AI and the 4D framework. Once you can already prompt

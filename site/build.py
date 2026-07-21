@@ -40,9 +40,9 @@ WIKILINK = re.compile(r"\[\[([^\]]+)\]\]")             # [[note]] links, Obsidia
 # ---- curated picks (section 01 — DESIGN.md §6) --------------------------------
 # id must exist in the collected cards; missing ids are skipped gracefully.
 CURATED = [
-    dict(id="ai-count-svd", meta="AI / CS224n · Note 02",
-         why="The full derivation of why SVD works, verified in numpy — and the mistake "
-             "I actually made (the word vector is U·S, not U) turned into the core warning."),
+    dict(id="ai-dev-workflow", meta="AI · Working method",
+         why="My playbook for building with AI — synthesized from Anthropic, Harper Reed, "
+             "and Osmani, down to the judgment call of when NOT to hand it to the model."),
     dict(id="lc-largest-rectangle-in-histogram", meta="LeetCode 84 · Hard",
          why="The monotonic-stack invariant, built up from the O(n²) version — how a "
              "trick becomes a reusable pattern."),
@@ -248,7 +248,29 @@ def collect():
                 "body_html": render_body(body),
             })
     cards.extend(external_ai_cards())
+    resolve_wikilinks(cards)
     return cards
+
+
+def resolve_wikilinks(cards):
+    """Turn [[slug]] cross-refs in note bodies into clickable links that open the
+    target card in the reader. Unknown targets degrade to plain prettified text so a
+    dangling link never shows raw [[ ]]. Runs after all cards exist so every id is known."""
+    ids = {c["id"] for c in cards}
+
+    def pretty(slug):
+        return re.sub(r"^(ai|os|net|lc|sd)-", "", slug).replace("-", " ")
+
+    def repl(m):
+        slug = m.group(1).strip()
+        if slug in ids:
+            return (f'<a class="wl" href="#card-{esc(slug)}" '
+                    f'onclick="expandCard(\'{esc(slug)}\');return false">{esc(pretty(slug))}</a>')
+        return esc(pretty(slug))
+
+    for c in cards:
+        if "[[" in c["body_html"]:
+            c["body_html"] = re.sub(r"\[\[([^\]]+)\]\]", repl, c["body_html"])
 
 
 def strip_note_front(text: str):
@@ -1264,6 +1286,8 @@ body.lock{overflow:hidden}
 .rbody pre code{font-size:.82rem}
 .rbody .katex-display{overflow-x:auto;overflow-y:hidden;padding:2px 0}   /* long equations scroll in-panel, not the page */
 .rbody img{max-width:100%;height:auto}
+.rbody a.wl{color:var(--accent);text-decoration:none;border-bottom:1px dotted var(--gold)}
+.rbody a.wl:hover{color:var(--gold)}
 .rbody table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem;display:block;overflow-x:auto}
 .rbody th,.rbody td{border:1px solid var(--border);padding:6px 10px;text-align:left}
 .rbody blockquote{margin:12px 0;padding:8px 14px;border-left:3px solid var(--accent);color:var(--muted)}
