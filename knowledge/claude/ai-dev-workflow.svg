@@ -27,7 +27,7 @@
   <path d="M60,72 v-8 H900 v8" fill="none" stroke="#79746a" stroke-width="1"/>
 
   <!-- row 1: before any code -->
-  <g>
+  <g class="wf-box" data-phase="explore">
     <rect x="60" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="75" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 01 · EXPLORE</text>
     <text x="75" y="144" font-size="14" font-weight="bold" fill="#232323">Read the code first</text>
@@ -35,7 +35,7 @@
     <text x="75" y="188" font-size="10.5" fill="#79746a">write nothing yet</text>
   </g>
   <line x1="310" y1="150" x2="347" y2="150" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
-  <g>
+  <g class="wf-box" data-phase="spec">
     <rect x="355" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="370" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 02 · SPEC</text>
     <text x="370" y="144" font-size="14" font-weight="bold" fill="#232323">AI interviews you → spec.md</text>
@@ -43,7 +43,7 @@
     <text x="370" y="188" font-size="10.5" fill="#79746a">stop: a stranger could build it</text>
   </g>
   <line x1="605" y1="150" x2="642" y2="150" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
-  <g>
+  <g class="wf-box" data-phase="plan">
     <rect x="650" y="90" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="665" y="116" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 03 · PLAN</text>
     <text x="665" y="144" font-size="14" font-weight="bold" fill="#232323">Right-size the chunks</text>
@@ -58,7 +58,7 @@
   <!-- the loop -->
   <rect x="44" y="270" width="872" height="230" fill="none" stroke="#79746a" stroke-width="1" stroke-dasharray="4 4"/>
 
-  <g>
+  <g class="wf-box" data-phase="build">
     <rect x="60" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="75" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 04 · BUILD</text>
     <text x="75" y="364" font-size="14" font-weight="bold" fill="#232323">Build ONE chunk only</text>
@@ -66,7 +66,7 @@
     <text x="75" y="408" font-size="10.5" fill="#79746a">spend the model on reasoning</text>
   </g>
   <line x1="310" y1="370" x2="347" y2="370" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
-  <g>
+  <g class="wf-box" data-phase="verify">
     <rect x="355" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="370" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 05 · VERIFY</text>
     <text x="370" y="364" font-size="14" font-weight="bold" fill="#232323">Machine check + your eyes</text>
@@ -75,7 +75,7 @@
   </g>
   <text x="623" y="360" text-anchor="middle" font-size="10" font-weight="bold" fill="#232323">pass</text>
   <line x1="605" y1="370" x2="642" y2="370" stroke="#232323" stroke-width="1.5" marker-end="url(#mInk)"/>
-  <g>
+  <g class="wf-box" data-phase="commit">
     <rect x="650" y="310" width="250" height="120" fill="#ffffff" stroke="#232323" stroke-width="1.25"/>
     <text x="665" y="336" font-size="10" letter-spacing="1.5" fill="#79746a">PHASE 06 · COMMIT</text>
     <text x="665" y="364" font-size="14" font-weight="bold" fill="#232323">Commit the green chunk</text>
@@ -84,7 +84,7 @@
   </g>
 
   <!-- next chunk: THE gold moment -->
-  <path d="M775,310 V290 H205 V306" fill="none" stroke="#d6a878" stroke-width="2" marker-end="url(#mGold)"/>
+  <path class="wf-loop-arrow" d="M775,310 V290 H205 V306" fill="none" stroke="#d6a878" stroke-width="2" marker-end="url(#mGold)"/>
   <text x="480" y="284" text-anchor="middle" font-size="11" font-weight="bold" fill="#d6a878">next chunk</text>
 
   <!-- fail loop -->

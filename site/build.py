@@ -792,6 +792,93 @@ DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge",
                  "software-engineering": "Software Eng", "systems": "Systems"}
 
 
+# ---- section 06: workflow flowchart (native, web-designed; DESIGN.md §11) ------
+# A clear flow architecture (before-code row + the loop) drawn in HTML/CSS — click
+# any phase to read its detail. Not the imported .svg (that stays in the note).
+PHASES = [
+    dict(key="explore", num="01", name="Explore", teaser="read first, write nothing",
+         title="Read the code first",
+         beats=["Trace deps, find prior art in the repo.",
+                "AI explores; it writes nothing yet.",
+                "Greenfield project → skip straight to Spec."]),
+    dict(key="spec", num="02", name="Spec", teaser="AI interviews you", spec=True,
+         title="AI interviews you → spec.md",
+         beats=["One question at a time until the idea is sharp (20–30 min).",
+                "Stop when a stranger could build it without asking you.",
+                "The output is a filled spec."]),
+    dict(key="plan", num="03", name="Plan", teaser="right-size the chunks",
+         title="Right-size the chunks",
+         beats=["Small enough to build + verify safely.",
+                "Big enough to move the project forward.",
+                "Output = an ordered checklist."]),
+    dict(key="build", num="04", name="Build", teaser="one chunk only", loop=True,
+         title="Build ONE chunk only",
+         beats=["Never hand over the whole plan at once.",
+                "Deterministic bits → script, not the model.",
+                "Spend the model on what needs reasoning."]),
+    dict(key="verify", num="05", name="Verify", teaser="machine + your eyes", loop=True,
+         title="Machine check + your eyes",
+         beats=["A concrete pass/fail: tests · lint · screenshot · numbers.",
+                "Machine pass ≠ done — read the diff yourself.",
+                "Fail → feed the error back, fix, re-verify."]),
+    dict(key="commit", num="06", name="Commit", teaser="green = rollback anchor", loop=True,
+         title="Commit the green chunk",
+         beats=["Every green chunk is a rollback anchor.",
+                "Then the next chunk — that's the loop.",
+                "Todo empty → ship it."]),
+]
+
+
+WORKFLOW_SVG = ROOT / "knowledge" / "claude" / "ai-dev-workflow.svg"
+
+
+def build_html():
+    if not WORKFLOW_SVG.exists():
+        return ""
+    svg = WORKFLOW_SVG.read_text(encoding="utf-8")
+    details, rail = [], []
+    for i, ph in enumerate(PHASES):
+        beats = "".join(f"<li>{esc(b)}</li>" for b in ph["beats"])
+        extra = ""
+        if ph.get("spec"):
+            extra = ('<p class="wf-fields"><a href="#card-ai-spec-template" '
+                     'onclick="expandCard(\'ai-spec-template\');return false">'
+                     'The fields I fill: Problem statement · Goals · Scope · Design · '
+                     'Tasks · Non-goals · Roles ↗</a></p>')
+        details.append(
+            f'<div class="wf-detail" data-phase="{ph["key"]}"{"" if i == 0 else " hidden"}>'
+            f'<p class="wf-eyebrow">Phase {ph["num"]} · {esc(ph["name"])}</p>'
+            f'<h3>{esc(ph["title"])}</h3><ul>{beats}</ul>{extra}</div>')
+        rail.append(
+            f'<button class="wf-tab" data-phase="{ph["key"]}" role="tab" '
+            f'aria-selected="{"true" if i == 0 else "false"}" '
+            f'aria-label="Phase {ph["num"]}, {esc(ph["name"])}">{ph["num"]}</button>')
+    return f"""
+  <section class="band" id="build" tabindex="-1">
+    <div class="wrap wide">
+      <div class="sec-head rv">
+        <p class="kicker"><span class="idx">06</span><span class="dec">How I build</span></p>
+        <h2>How I build software with AI.</h2>
+        <p>My repeatable <a href="#card-ai-dev-workflow" onclick="expandCard('ai-dev-workflow');return false">method</a>
+        as a flowchart — spec first, then a build → verify → commit <b>loop</b>, one chunk at a time.
+        <b>Click a phase</b> (or use ← →) to read it.</p>
+      </div>
+      <div class="wf rv">
+        <div class="wf-map crop">{svg}</div>
+        <div class="wf-side">
+          <div class="wf-details">{''.join(details)}</div>
+          <div class="wf-controls">
+            <button class="wf-btn" id="wf-prev" aria-label="Previous phase">←</button>
+            <div class="wf-rail" role="tablist" aria-label="Workflow phases">{''.join(rail)}</div>
+            <button class="wf-btn" id="wf-next" aria-label="Next phase">→</button>
+            <span class="wf-chunk" id="wf-chunk" aria-live="polite" hidden>chunk 1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>"""
+
+
 def log_html(cards, solved):
     dom_opts = "".join(
         f'<option value="{esc(d)}">{esc(DOMAIN_LABELS.get(d, d.title()))}</option>'
@@ -800,7 +887,7 @@ def log_html(cards, solved):
   <section class="band" id="log">
     <div class="wrap wide">
       <div class="sec-head rv">
-        <p class="kicker"><span class="idx">06</span><span class="dec">Write-ups</span></p>
+        <p class="kicker"><span class="idx">07</span><span class="dec">Write-ups</span></p>
         <h2>Everything, written up.</h2>
         <p>All {len(cards)} articles — LeetCode patterns, CS224n notes, engineering
         deep-dives. Click a card to read.</p>
@@ -852,6 +939,7 @@ FOOTER = f"""
     <a href="#start" data-sec="start">Start here</a>
     <a href="#xp" data-sec="xp">Résumé</a>
     <a href="#ai" data-sec="ai">AI notes</a>
+    <a href="#build" data-sec="build">How I build</a>
     <a href="#log" data-sec="log">Write-ups</a>
     <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
     <a class="ext" href="{LINKEDIN_URL}" target="_blank" rel="noopener">LinkedIn ↗</a>
@@ -873,6 +961,7 @@ def page(cards, graph, solved, contrib):
            + activity_html(contrib)
            + system_html()
            + ai_notes_html(cards)
+           + build_html()
            + log_html(cards, solved)
            + FOOTER + "\n" + data + "\n" + SCRIPT + "\n</body>\n</html>")
     return out.replace("__BUILD_MONTH__", build_month)
@@ -1233,6 +1322,40 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
   text-transform:uppercase;letter-spacing:.06em}
 @media(max-width:560px){ .row .d{display:none} }
 
+/* ---- section 06: workflow stepper (inline hand-made SVG · click a phase) ---- */
+.wf{display:grid;gap:1.4rem;margin-top:1.5rem}
+@media(min-width:1080px){ .wf{grid-template-columns:1.55fr 1fr;align-items:center} }
+.wf-map{background:var(--bg);padding:10px}
+.wf-map svg{width:100%;height:auto;display:block}
+.wf-map .wf-box{cursor:pointer}
+.wf-map .wf-box rect{transition:fill .25s var(--ease),stroke .25s var(--ease)}
+.wf-map .wf-box:not(.active){opacity:.45;transition:opacity .25s var(--ease)}
+.wf-map .wf-box.active rect{fill:#f6ecda;stroke:var(--gold);stroke-width:2.5}
+.wf-map svg.wf-looping .wf-loop-arrow{animation:wfpulse 1.5s ease-in-out infinite}
+@keyframes wfpulse{50%{stroke-width:3.6;opacity:.5}}
+.wf-side{display:flex;flex-direction:column;gap:1.1rem}
+.wf-eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--gold);margin:0}
+.wf-detail h3{font-family:var(--serif);font-weight:600;font-size:1.35rem;margin:.25rem 0 .55rem}
+.wf-detail ul{margin:0;padding-left:1.1rem;color:var(--fg)}
+.wf-detail li{margin:.25rem 0}
+.wf-fields{margin:.7rem 0 0}
+.wf-fields a{font-family:var(--mono);font-size:.76rem;color:var(--accent);
+  border-bottom:1px dotted var(--gold);text-decoration:none}
+.wf-fields a:hover{color:var(--gold)}
+.wf-controls{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.wf-btn{border:1px solid var(--border);background:var(--surface);border-radius:999px;
+  width:42px;height:42px;cursor:pointer;font-size:1.05rem;color:var(--fg);transition:border-color .15s}
+.wf-btn:hover{border-color:var(--gold)}
+.wf-rail{display:flex;gap:6px}
+.wf-tab{border:1px solid var(--border);background:transparent;border-radius:999px;
+  width:36px;height:36px;font-family:var(--mono);font-size:.72rem;cursor:pointer;
+  color:var(--muted);transition:background .15s,color .15s}
+.wf-tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.wf-chunk{font-family:var(--mono);font-size:.74rem;color:var(--gold);margin-left:auto;
+  font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){ .wf-map svg.wf-looping .wf-loop-arrow{animation:none} }
+
 /* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
 .controls select,.controls input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
@@ -1585,6 +1708,35 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   addEventListener('keydown',e=>{ if(e.key==='Escape') closeReader(); });
   window.expandCard=openReader;   // graph panel + curated picks land here
   window.addEventListener('load',()=>{ if(location.hash.indexOf('#card-')===0) openReader(location.hash.slice(6)); });
+})();
+
+/* ---- section 06: workflow stepper — click a phase box in the inline SVG ---- */
+(function(){
+  const sec=$('build'); if(!sec) return;
+  const PH=['explore','spec','plan','build','verify','commit'], LOOP=3;
+  const details=[].slice.call(sec.querySelectorAll('.wf-detail'));
+  const boxes=[].slice.call(sec.querySelectorAll('.wf-box'));
+  const tabs=[].slice.call(sec.querySelectorAll('.wf-tab'));
+  const svg=sec.querySelector('.wf-map svg'), chunkEl=$('wf-chunk');
+  let phase=0, chunk=1;
+  function render(){
+    const key=PH[phase], inLoop=phase>=LOOP;
+    details.forEach(d=>d.hidden=d.dataset.phase!==key);
+    boxes.forEach(b=>b.classList.toggle('active',b.dataset.phase===key));
+    tabs.forEach(t=>t.setAttribute('aria-selected',t.dataset.phase===key?'true':'false'));
+    if(svg) svg.classList.toggle('wf-looping',inLoop);
+    if(chunkEl){ chunkEl.hidden=!inLoop; chunkEl.textContent='chunk '+chunk; }
+  }
+  function go(p){ if(p>=0&&p<PH.length){ phase=p; render(); } }
+  function next(){ if(phase===PH.length-1){ phase=LOOP; chunk++; } else phase++; render(); }
+  function prev(){ if(phase===LOOP&&chunk>1){ phase=PH.length-1; chunk--; } else if(phase>0){ phase--; } render(); }
+  $('wf-next').onclick=next; $('wf-prev').onclick=prev;
+  boxes.forEach(b=>{ b.style.cursor='pointer'; b.addEventListener('click',()=>go(PH.indexOf(b.dataset.phase))); });
+  tabs.forEach(t=>t.addEventListener('click',()=>go(PH.indexOf(t.dataset.phase))));
+  sec.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'){ next(); e.preventDefault(); }
+    else if(e.key==='ArrowLeft'){ prev(); e.preventDefault(); } });
+  render();
 })();
 
 /* ---- knowledge graph: Obsidian-style rotating globe (small dots, hover focus) ---- */
