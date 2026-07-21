@@ -25,7 +25,8 @@ valuable in outcome.* Jumping straight to code produces a polished solution to t
 Don't start with "build me X." Start by turning a fuzzy idea into a written spec. Harper Reed's
 move: tell the AI *"Ask me one question at a time so we can develop a thorough, step-by-step
 spec for this idea"* — it interviews *you* until the idea is sharp (this is [[ai-vague-requirements]]
-in action). Then: *"compile our findings into a developer-ready specification."*
+in action). Then: *"compile our findings into a developer-ready specification"* — the fields I
+fill are [[ai-spec-template]].
 
 * **Existing codebase? Read before you spec（改舊系統，先讀再想）:** have AI explore first —
   file structure, dependencies, how similar features were already done *here* — while it

@@ -132,6 +132,7 @@ def _inline(s: str) -> str:
     s = html.escape(s, quote=False)
     s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)                    # `code`
     s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)          # **bold**
+    s = re.sub(r"\*(\S(?:[^*\n]*\S)?)\*", r"<em>\1</em>", s)           # *italic* (bold already gone)
     s = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)",                            # ![alt](img)
                r'<img src="\2" alt="\1" style="max-width:100%;border-radius:8px;margin:10px 0">', s)
     s = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)",
@@ -190,16 +191,23 @@ def md_to_html(md: str) -> str:
             out.append(f"<h{lvl}>{_inline(m.group(2))}</h{lvl}>")
             i += 1
             continue
-        if re.match(r"\s*[-*]\s+", line):                            # ul
+        BLOCK = r"(\s*[-*]\s+|\s*\d+\.\s+|#{1,6}\s|>|\||```)"        # a line that starts a new block
+        if re.match(r"\s*[-*]\s+", line):                            # ul (folds lazy continuations)
             buf = []
             while i < n and re.match(r"\s*[-*]\s+", lines[i]):
-                buf.append(re.sub(r"\s*[-*]\s+", "", lines[i], count=1)); i += 1
+                item = re.sub(r"\s*[-*]\s+", "", lines[i], count=1); i += 1
+                while i < n and lines[i].strip() and not re.match(BLOCK, lines[i]):
+                    item += " " + lines[i].strip(); i += 1
+                buf.append(item)
             out.append("<ul>" + "".join(f"<li>{_inline(x)}</li>" for x in buf) + "</ul>")
             continue
-        if re.match(r"\s*\d+\.\s+", line):                           # ol
+        if re.match(r"\s*\d+\.\s+", line):                           # ol (folds lazy continuations)
             buf = []
             while i < n and re.match(r"\s*\d+\.\s+", lines[i]):
-                buf.append(re.sub(r"\s*\d+\.\s+", "", lines[i], count=1)); i += 1
+                item = re.sub(r"\s*\d+\.\s+", "", lines[i], count=1); i += 1
+                while i < n and lines[i].strip() and not re.match(BLOCK, lines[i]):
+                    item += " " + lines[i].strip(); i += 1
+                buf.append(item)
             out.append("<ol>" + "".join(f"<li>{_inline(x)}</li>" for x in buf) + "</ol>")
             continue
         if not line.strip():
