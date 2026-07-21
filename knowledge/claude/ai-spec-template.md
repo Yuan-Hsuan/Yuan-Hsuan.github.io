@@ -72,6 +72,23 @@ A real one from this repo, kept tiny on purpose:
 * **Good enough?** Definition of Done met (cells align, labels honest, JS checks). More worth it? No — the look-ahead and per-hour precision are low-ROI nice-to-haves. Ship.
 * **Roles:** AI executes the bucketing edit; I own "is the timezone logic actually right?" and read the diff. Push back if it touches more than the two functions in scope.
 
+## Per-type variants — one core, spec ≠ one file
+The eight fields are the core. Each **project type** starts from them and adds a few of its own
+— and a big spec is often several files (a `DESIGN.md` + a `tasks.md`), not one:
+
+| Project type | Adds beyond the core |
+|---|---|
+| **Web / UI build** | design tokens · layout & motion inventory · a data-pipeline table (source · freshness · failure) · a11y + perf budget · a scaling playbook (my `DESIGN.md` *is* this spec) |
+| **Study note** | a Contents/TOC · a worked example (shapes / derivation) · a one-line summary · a Recall prompt |
+| **Engineering explainer** | core concept → lifecycle → a **trade-off table** (no worked math needed) |
+| **Interview / BQ story** | competency mapping + a coverage matrix · tiered L0/L1/L2 delivery · per-audience variants · STAR vs STARL |
+| **Live call script** | an ordered call flow · constants vs. fill-per-company · a numbers / never-say block |
+| **Conversation debrief** | a snapshot · what happened · retrospective-as-hypotheses · portable lessons (captured same-day) |
+| **Research / decision memo** | research date + method · a 30-second TL;DR · base-rate framing · a decision verdict · sources |
+
+The rows are just the *extra* fields; every type still runs Problem → Goals → Scope → Tasks →
+Non-goals → Good-enough. Pick the row that matches, drop its fields onto the core, done.
+
 ## Prior art（這其實是 Spec-Driven Development）
 Not invented — a personal cut of a 2025–26 movement. **AWS Kiro** splits a spec into *Requirements → Design → Tasks* (with EARS); **GitHub Spec Kit** does `/specify → /plan → /tasks`; classic **PRDs** lead with a Problem statement and explicit **Non-goals**; **ADRs** are the decision log. My fields map onto all of them — the one part they mostly omit is field 6, *good enough*.
 
