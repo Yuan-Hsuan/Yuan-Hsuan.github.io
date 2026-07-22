@@ -861,7 +861,7 @@ def build_html():
         <h2>How I build software with AI.</h2>
         <p>My repeatable <a href="#card-ai-dev-workflow" onclick="expandCard('ai-dev-workflow');return false">method</a>
         as a flowchart — spec first, then a build → verify → commit <b>loop</b>, one chunk at a time.
-        <b>Click a phase</b> (or use ← →) to read it.</p>
+        </p>
       </div>
       <div class="wf rv">
         <div class="wf-map crop">{svg}</div>
