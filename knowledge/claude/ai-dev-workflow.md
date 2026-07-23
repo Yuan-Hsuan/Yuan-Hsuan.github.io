@@ -11,7 +11,7 @@ visibility: public
 > My own working guideline for building anything non-trivial with AI. Synthesized from
 > Anthropic's Claude Code best practices, [Harper Reed](https://harper.blog/2025/02/16/my-llm-codegen-workflow-atm/),
 > and [Addy Osmani](https://addyosmani.com/blog/ai-coding-workflow/). Uses the 4D skills:
-> [[ai-delegation]] · [[ai-description]] · [[ai-fluency]].
+> [[ai-delegation]] · [[ai-description]] · [[ai-discernment]] · [[ai-diligence]] · [[ai-fluency]].
 
 **At a glance:** `Explore → Spec → Plan → Build a chunk → Verify → Commit → loop`.
 
@@ -52,6 +52,11 @@ verify, *then* Step 2. **Also decide per chunk (from [[ai-delegation]]):** is it
 (rename, config, mechanical)? Don't delegate it — script it or use a real tool. Only spend the AI
 on the bits that genuinely need reasoning.
 
+* **Watch the build, don't just await the result（[[ai-discernment]] 的 Process 鏡頭）:** if the AI
+  mid-chunk starts reasoning down a wrong path, oversteps the spec, or loops on a trivial detail —
+  **interrupt now, don't wait for the run to finish.** Catching a bad *process* early is far cheaper
+  than verifying a bad *product* later.
+
 ## 4. Phase 4 — Verify every chunk（驗收：給 AI 一把能自己驗的尺）
 Anthropic's single highest-leverage practice: **give the work a way to be verified.** Not "looks
 right" — a concrete pass/fail signal:
@@ -61,14 +66,23 @@ right" — a concrete pass/fail signal:
 * the actual **numbers/output** matching what the spec said "done" looks like.
 
 **And machine pass ≠ done — read the diff yourself.** Tests only cover what tests cover; a green
-suite can hide a quietly-broken interface. Reading AI's diff line by line is the Discernment D of
-[[ai-fluency]] made concrete: the reviewer is still you.
+suite can hide a quietly-broken interface. This manual pass is [[ai-discernment]] made concrete —
+run **all three lenses**, not just the first: **Product** (does the diff meet the spec?),
+**Process** (did it get there sanely, or hack around a test to force green?), **Performance** (are
+we 5 rounds deep on one chunk?). The reviewer is still you.
+
+**But your review is only as sharp as your domain knowledge（讀 diff 的準度 = 你的專業深度）.**
+Outside your strong areas (systems, firmware, backend) you can't see the bug you don't know to look
+for — so *there*, weight the machine signal and [[ai-diligence]] (tests, official-doc cross-checks)
+**higher**, not lower. Knowing where you *can't* trust your own diff-read is the metacognition half
+of Discernment.
 If you can't state how a chunk gets verified, you under-specified the Product in Phase 1 — go back.
 
 ## 5. Phase 5 — Commit & loop（驗過就 commit，再回頭）
 Chunk passed → **commit it** — every green chunk is a rollback anchor — then the next chunk.
 Chunk failed → feed the error + code back, fix, re-verify ("rinse and repeat"); if the fixing
-spirals, **reset to the last green commit** instead of patching a mess. And if you're on the
+spirals, **reset to the last green commit** instead of patching a mess （這就是 [[ai-discernment]]
+的 *dirty context → 開乾淨對話*，commit 版）. And if you're on the
 **5th revision and it's still wrong**, don't write a harder prompt —
 that's a *delegation* problem ([[ai-delegation]]): you handed off a bit that needed you, or one a
 cheaper deterministic step should've narrowed first. Drop back a phase, don't push harder.
@@ -76,7 +90,8 @@ cheaper deterministic step should've narrowed first. Drop back a phase, don't pu
 **When it goes off, the AI is a mirror（AI 走偏時，把它當鏡子）:** a bad answer is rarely the
 model being dumb — it's usually where my brief was ambiguous. Don't blame the tool; read the wrong
 output as a diagnostic of my own **Description** ([[ai-description]]): which P was underspecified?
-Fix the brief, not my frustration. The reviewer — and the describer — is still me.
+Fix the brief, not my frustration. The reviewer — and the describer — is still me. （這正是
+[[ai-discernment]] Product 鏡頭的 Action：輸出爛 → 回去修 Description。）
 
 ## 6. The four failure modes this guards against（這套流程在防四件事）
 1. **Straight-to-code** → solves the wrong problem. Fix: Phase 1 spec first.
