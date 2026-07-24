@@ -18,7 +18,6 @@ Usage:
     python site/build.py
 """
 from __future__ import annotations
-import hashlib
 import html
 import json
 import re
@@ -332,9 +331,10 @@ def external_ai_cards():
 
 
 def build_graph(cards):
-    """Bipartite graph for the hero globe: every note and every topic is a node;
-    notes link to their topics (+ any [[wikilinks]])."""
-    DOM_CI = {"leetcode": 0, "ai": 1}
+    """Bipartite graph for the hero knowledge map: every note and every topic is a node;
+    notes link to their topics (+ any [[wikilinks]]). `dom` buckets each node into one of
+    four domains — the JS packs each domain into its own cluster."""
+    DOM_I = {"leetcode": 0, "ai": 1, "systems": 2, "software-engineering": 3}
     ids = {c["id"] for c in cards}
     tag_dom = defaultdict(Counter)
     tag_notes = defaultdict(list)
@@ -349,7 +349,7 @@ def build_graph(cards):
     for c in cards:
         index["note:" + c["id"]] = len(nodes)
         nodes.append({"id": "note:" + c["id"], "type": "note", "label": c["label"],
-                      "full": c["title"], "ci": DOM_CI.get(c["domain"], 0), "cardId": c["id"],
+                      "full": c["title"], "dom": DOM_I.get(c["domain"], 0), "cardId": c["id"],
                       "difficulty": c["difficulty"],
                       "r": round(5 + 5 * (c["words"] / maxw) ** 0.5, 1)})
     maxd = max((len(v) for v in tag_notes.values()), default=1) or 1
@@ -357,7 +357,7 @@ def build_graph(cards):
         dom = tag_dom[t].most_common(1)[0][0]
         index["tag:" + t] = len(nodes)
         nodes.append({"id": "tag:" + t, "type": "tag", "label": t, "full": t,
-                      "ci": DOM_CI.get(dom, 0), "count": len(tag_notes[t]), "items": tag_notes[t],
+                      "dom": DOM_I.get(dom, 0), "count": len(tag_notes[t]), "items": tag_notes[t],
                       "r": round(8 + 11 * (len(tag_notes[t]) / maxd) ** 0.7, 1)})
 
     edges = []
@@ -376,14 +376,9 @@ def build_graph(cards):
                     seen.add(e)
                     edges.append([e[0], e[1]])
 
-    # Scatter node order by a stable hash: the JS fibonacci sphere maps array index
-    # to latitude, so a notes-then-tags list makes each type clump into its own band
-    # (notes packed at the top). A deterministic shuffle mixes types evenly.
-    order = sorted(range(len(nodes)),
-                   key=lambda i: hashlib.md5(nodes[i]["id"].encode()).hexdigest())
-    remap = {old: new for new, old in enumerate(order)}
-    nodes = [nodes[i] for i in order]
-    edges = [[remap[a], remap[b]] for a, b in edges]
+    # Node order no longer drives position: the JS groups by `dom` and packs each cluster
+    # itself, so the old md5 shuffle (which broke the fibonacci sphere's latitude banding)
+    # is gone with the sphere.
     return {"nodes": nodes, "edges": edges}
 
 
@@ -543,7 +538,7 @@ def hero_html(cards, solved):
     </div>
     <div class="hero2-right hud">
       <canvas id="kg" aria-label="Knowledge graph of write-ups and topics"></canvas>
-      <div class="kg-hint" id="kg-hud">drag to rotate · click a dot</div>
+      <div class="kg-hint" id="kg-hud">click a topic</div>
       <aside class="kg-panel" id="kg-panel"></aside>
     </div>
     <div class="cue" aria-hidden="true">↓</div>
@@ -1016,7 +1011,7 @@ HEAD = """<!doctype html>
   --fg:#232323; --muted:#5b5a56; --accent:#40392e; --gold:#d6a878;
   --lc:#3a352c; --ai:#8a8378; --panel:#232323;
   --easy:#8a8a8a; --medium:#5b5a56; --hard:#232323;
-  --gh0:#e7e0d1; --gh1:#eeddc2; --gh2:#dfb98a; --gh3:#c08a4d; --gh4:#8f6132;
+  --gh0:#e6e0d2; --gh1:#e8c99a; --gh2:#d9a866; --gh3:#c0863c; --gh4:#8f5f26;
   --serif:"Fraunces",Georgia,serif;
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -1105,7 +1100,7 @@ h1,h2,h3{text-wrap:balance}
 .band.dark .btn.primary{background:#f1eee7;color:#232323;border-color:#f1eee7}
 .band.dark .btn.primary:hover{background:var(--gold);border-color:var(--gold)}
 .hero2-right{flex:1 1 53%;align-self:stretch;position:relative;overflow:hidden;background:var(--panel)}
-.hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+.hero2-right #kg{position:absolute;inset:0;width:100%;height:100%;cursor:default}
 .kg-hint{position:absolute;right:14px;bottom:12px;font-family:var(--mono);font-size:.62rem;
   letter-spacing:.08em;text-transform:uppercase;color:#8a8a8a;pointer-events:none;
   font-variant-numeric:tabular-nums}
@@ -1739,95 +1734,151 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   render();
 })();
 
-/* ---- knowledge graph: Obsidian-style rotating globe (small dots, hover focus) ---- */
+/* ---- knowledge map: four domain clusters packed into one round mass ---- */
 (function(){
   const cv=$('kg'); if(!cv||typeof GRAPH==='undefined'||!GRAPH.nodes) return;
   const ctx=cv.getContext('2d'), panel=$('kg-panel'), hud=$('kg-hud');
   const N=GRAPH.nodes, E=GRAPH.edges;
   N.forEach((n,i)=>n._i=i);
   const adj=N.map(()=>[]); E.forEach(e=>{adj[e[0]].push(e[1]); adj[e[1]].push(e[0]);});
-  if(hud) hud.textContent='nodes '+N.length+' · edges '+E.length+' · drag to rotate · click a topic';
+  if(hud) hud.textContent='nodes '+N.length+' · edges '+E.length+' · click a topic';
   let W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
   function resize(){ const r=cv.getBoundingClientRect(); W=r.width; H=r.height;
     cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); }
   new ResizeObserver(resize).observe(cv); resize();
 
-  /* fibonacci-sphere layout: the graph is literally round */
-  const GA=Math.PI*(3-Math.sqrt(5));
-  N.forEach((n,i)=>{ const y=1-2*(i+0.5)/N.length, r=Math.sqrt(1-y*y), a=GA*i;
-    n.sx=Math.cos(a)*r; n.sy=y; n.sz=Math.sin(a)*r; });
+  /* force-directed community graph: springs pull linked nodes together, every pair repels
+     (within range), and each node drifts toward its domain's home — the four domains loosely
+     group but nodes are draggable and the whole thing settles into a spread mass. */
+  const DOMS=[{name:'LeetCode'},{name:'AI'},{name:'Systems'},{name:'Software'}];
+  const DC=[[0.449,0.453],[0.551,0.447],[0.461,0.577],[0.544,0.565]];
+  const counts=[0,0,0,0]; N.forEach(n=>counts[n.dom]++);
+  DOMS.forEach((d,i)=>d.count=counts[i]);
+  const deg=adj.map(a=>a.length);
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296; }; }
+  const rnd=mulberry32(424242);
+  const byDom=[[],[],[],[]]; N.forEach(n=>byDom[n.dom].push(n));
+  byDom.forEach(arr=>{                                   // seed order → initial packed positions
+    arr.sort((a,b)=> a.type===b.type ? (b.count||0)-(a.count||0) : (a.type==='tag'?-1:1));
+    const K=arr.length;
+    arr.forEach((n,j)=>{ n.u=Math.pow((j+0.5)/K,0.48); n.th=j*2.399963267;
+      n.ox=(rnd()-0.5)*0.20; n.oy=(rnd()-0.5)*0.20; });
+  });
 
-  let yaw=0.6,pitch=-0.22,vyaw=0,hover=null,sel=null,drag=null;
-  const PERS=3.2, born=performance.now();
-  function project(n){
-    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
-    const x=n.sx*cy+n.sz*sy, z=-n.sx*sy+n.sz*cy;
-    const y2=n.sy*cp-z*sp, z2=n.sy*sp+z*cp;
-    const R=Math.min(W,H)*0.38, f=PERS/(PERS-z2);
-    n.px=W/2+x*R*f; n.py=H/2+y2*R*f; n.pz=z2; n.pf=f;
-  }
+  /* --- physics (constants tuned offline to fill the panel without escaping) --- */
+  const REPEL=-90, R2=160*160, SPRING=0.30, REST=28, GRAV=0.09, VD=0.60, VMAX=14;
+  let alpha=0, alphaTarget=0, inited=false, dragging=null, hover=null, sel=null;
+  const AD=0.021, AMIN=0.004;
   const isNbr=(m,n)=>m&&(n===m||adj[m._i].indexOf(n._i)>=0);
 
-  function draw(){
+  function initPos(){
+    for(const n of N){ const cx=DC[n.dom][0]*W, cy=DC[n.dom][1]*H,
+        R=Math.sqrt(counts[n.dom])*Math.min(W,H)*0.05;
+      n.x=cx+(n.u*Math.cos(n.th)+n.ox)*R; n.y=cy+(n.u*Math.sin(n.th)+n.oy)*R; n.vx=0; n.vy=0; }
+    inited=true;
+  }
+  function tick(){
+    alpha += (alphaTarget-alpha)*AD;
+    for(const n of N){ n.fx=0; n.fy=0; }
+    for(let i=0;i<N.length;i++){ const a=N[i];             // repulsion (capped range)
+      for(let j=i+1;j<N.length;j++){ const b=N[j];
+        let dx=b.x-a.x, dy=b.y-a.y, d2=dx*dx+dy*dy;
+        if(d2>R2) continue; if(d2<1) d2=1;
+        const w=REPEL*alpha/d2;
+        a.fx+=dx*w; a.fy+=dy*w; b.fx-=dx*w; b.fy-=dy*w; } }
+    for(const e of E){ const a=N[e[0]], b=N[e[1]];         // link springs (degree-biased)
+      let dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy)||1;
+      const l=(dist-REST)/dist*SPRING*alpha, ba=deg[a._i]/(deg[a._i]+deg[b._i]), bb=1-ba;
+      if(a!==dragging){ a.x+=dx*l*bb; a.y+=dy*l*bb; }
+      if(b!==dragging){ b.x-=dx*l*ba; b.y-=dy*l*ba; } }
+    const mgx=W*0.06, mgy=H*0.06;
+    for(const n of N){
+      if(n===dragging){ n.vx=0; n.vy=0; continue; }
+      n.fx+=(DC[n.dom][0]*W-n.x)*GRAV*alpha; n.fy+=(DC[n.dom][1]*H-n.y)*GRAV*alpha;
+      n.vx=(n.vx+n.fx)*VD; n.vy=(n.vy+n.fy)*VD;
+      const sp=Math.hypot(n.vx,n.vy); if(sp>VMAX){ n.vx*=VMAX/sp; n.vy*=VMAX/sp; }
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<mgx){ n.x=mgx; n.vx*=-0.3; } else if(n.x>W-mgx){ n.x=W-mgx; n.vx*=-0.3; }
+      if(n.y<mgy){ n.y=mgy; n.vy*=-0.3; } else if(n.y>H-mgy){ n.y=H-mgy; n.vy*=-0.3; }
+    }
+    if(!dragging){ let mx=0,my=0; for(const n of N){ mx+=n.x; my+=n.y; }   // recenter centroid
+      const sx=W/2-mx/N.length, sy=H/2-my/N.length;
+      for(const n of N){ n.x+=sx; n.y+=sy; } }
+  }
+  const born=performance.now();
+
+  function draw(t){
+    if(!inited && W>0){ initPos();
+      if(REDUCED){ alpha=1; for(let k=0;k<320;k++) tick(); alpha=0; }   // pre-settle, no anim
+      else alpha=1; }
+    if(alpha>AMIN || dragging) tick();
     ctx.clearRect(0,0,W,H);
-    const birth=REDUCED?1:Math.min(1,(performance.now()-born)/1200);
-    N.forEach(project);
+    const birth=REDUCED?1:Math.min(1,(t-born)/1000);
     const focus=hover||sel;
     for(const e of E){ const a=N[e[0]],b=N[e[1]];
       const hot=focus&&(a===focus||b===focus);
-      const depth=((a.pz+b.pz)/2+1)/2;
       ctx.strokeStyle=hot?'#d6a878':'#8f8b84';
-      ctx.globalAlpha=(hot?0.85:(focus?0.04:0.05+0.11*depth))*birth;
+      ctx.globalAlpha=(hot?0.85:(focus?0.04:(a.dom!==b.dom?0.07:0.13)))*birth;
       ctx.lineWidth=hot?1.2:0.6;
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke(); }
-    const order=[...N].sort((a,b)=>a.pz-b.pz);          // paint back-to-front
-    for(const n of order){
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    for(const n of N){
       const nb=focus&&isNbr(focus,n);
-      const base=(n.type==='tag'?2.6:1.7)*n.pf;
-      const front=(n.pz+1)/2;
-      const rest=(0.35+0.65*front)*(n.type==='note'?0.5:1);   // notes rest as faint dots
-      ctx.globalAlpha=(focus?(nb?1:0.15):rest)*birth;
+      const base=n.type==='tag'?(2.4+0.05*(n.count||1)):1.6;
+      ctx.globalAlpha=(focus?(nb?1:0.15):(n.type==='note'?0.5:0.9))*birth;
       ctx.fillStyle=(n===focus)?'#d6a878':(nb?'#f1eee7':'#ededed');
-      ctx.beginPath(); ctx.arc(n.px,n.py,nb?base*1.7:base,0,6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x,n.y,nb?base*1.7:base,0,6.283); ctx.fill();
+      if(n===focus){ ctx.globalAlpha=birth; ctx.strokeStyle='#232323'; ctx.lineWidth=1.6; ctx.stroke(); }
     }
-    /* labels — Obsidian-style: topics always (depth-faded), notes when they face front;
-       with a focus, only the focus + its neighbours stay readable */
+    /* labels: hub topics at rest; with a focus, only it + its neighbours stay readable */
     ctx.textAlign='center'; ctx.textBaseline='top';
-    for(const n of order){
-      const front=(n.pz+1)/2;
+    for(const n of N){
       let a;
       if(focus){ a = (n===focus||isNbr(focus,n)) ? 1 : 0.05; }
       else if(n.type==='tag'){
         if((n.count||0)<2) continue;          // singleton topics: label on focus only
-        a = 0.22+0.6*front; }
+        a = 0.72; }
       else continue;                          // notes stay unlabeled until a topic is focused
       if(a<=0.06) continue;
       const lab=n.type==='tag'?n.label:n.full.replace(/^\d+\.\s*/,'');
       ctx.font=(n===focus?'600 12px ':(n.type==='tag'?'500 10px ':'400 9px '))+'"JetBrains Mono",monospace';
       ctx.globalAlpha=a*birth;
-      ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.px,n.py+7);
-      ctx.fillStyle=n===focus?'#d6a878':'#c9c5bd'; ctx.fillText(lab,n.px,n.py+7);
+      ctx.lineWidth=3; ctx.strokeStyle='#232323'; ctx.strokeText(lab,n.x,n.y+7);
+      ctx.fillStyle=n===focus?'#d6a878':'#c9c5bd'; ctx.fillText(lab,n.x,n.y+7);
     }
-    ctx.globalAlpha=1;
+    /* domain names, sitting just outside each cluster's live centroid */
+    const cs=[[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+    for(const n of N){ const c=cs[n.dom]; c[0]+=n.x; c[1]+=n.y; c[2]++; }
+    for(const c of cs){ if(c[2]){ c[0]/=c[2]; c[1]/=c[2]; } }
+    const rad=[0,0,0,0];
+    for(const n of N){ const d=Math.hypot(n.x-cs[n.dom][0],n.y-cs[n.dom][1]); if(d>rad[n.dom]) rad[n.dom]=d; }
+    ctx.textBaseline='alphabetic';
+    DOMS.forEach((d,di)=>{ const c=cs[di]; if(!c[2]) return;
+      let dx=c[0]-W/2, dy=c[1]-H/2, m=Math.hypot(dx,dy)||1; dx/=m; dy/=m;
+      const lx=c[0]+dx*(rad[di]+18), ly=c[1]+dy*(rad[di]+18);
+      ctx.textAlign=dx<-0.25?'right':(dx>0.25?'left':'center');
+      ctx.globalAlpha=(focus?0.4:1)*birth;
+      ctx.font='600 15px "Fraunces",Georgia,serif';
+      ctx.lineWidth=4; ctx.strokeStyle='#232323'; ctx.strokeText(d.name,lx,ly);
+      ctx.fillStyle='#a9a49a'; ctx.fillText(d.name,lx,ly);
+      ctx.font='500 9px "JetBrains Mono",monospace'; ctx.fillStyle='#767068';
+      ctx.fillText(d.count+' nodes',lx,ly+13); });
+    ctx.textAlign='center'; ctx.globalAlpha=1;
   }
   let visible=true;                                     // pause the loop off-screen
   new IntersectionObserver(es=>{ visible=es[0].isIntersecting; },{threshold:0}).observe(cv);
-  (function loop(){
-    if(visible && !document.hidden){
-      if(!drag){ yaw+=vyaw; vyaw*=0.94;
-        if(!REDUCED && !hover && !sel) yaw+=0.0016; }   // idle rotation
-      pitch=Math.max(-1.2,Math.min(1.2,pitch));
-      draw();
-    }
+  (function loop(t){
+    if(visible && !document.hidden) draw(t||performance.now());
     requestAnimationFrame(loop);
   })();
 
-  /* topics are the first layer: only they are hit-testable at rest. A note becomes
-     targetable ONLY while its topic is selected — so problem titles never surface first. */
+  /* topics are the first layer for SELECTION: only they open the panel at rest, and a note
+     opens only while its topic is selected. Dragging, though, grabs ANY dot. */
   const targetable=n=>n.type==='tag'||(sel&&sel.type==='tag'&&isNbr(sel,n));
-  function nodeAt(x,y){ let best=null,bd=169;           // 13px hit radius, front hemisphere first
-    for(const n of N){ if(n.pz<-0.25||!targetable(n)) continue;
-      const d=(x-n.px)*(x-n.px)+(y-n.py)*(y-n.py);
+  function nodeAt(x,y,all){ let best=null,bd=196;       // 14px hit radius
+    for(const n of N){ if(!all && !targetable(n)) continue;
+      const d=(x-n.x)*(x-n.x)+(y-n.y)*(y-n.y);
       if(d<bd){ bd=d; best=n; } }
     return best; }
   function selectNode(n){
@@ -1851,36 +1902,29 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       else if(a.dataset.tag) selectNode(N[+a.dataset.tag]);
     });
   }
-  cv.addEventListener('mousemove',e=>{ const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-    if(drag){ const dx=x-drag.x, dy=y-drag.y;
-      yaw+=dx*0.005; pitch+=dy*0.003; vyaw=dx*0.0007;
-      drag.x=x; drag.y=y;
-      if(Math.abs(x-drag.x0)+Math.abs(y-drag.y0)>4) drag.moved=true;
-      return; }
-    hover=nodeAt(x,y); cv.style.cursor=hover?'pointer':'grab'; });
+  let down=null;                                        // {x,y,moved}
+  function reheat(){ alpha=Math.max(alpha,0.3); alphaTarget=0.3; }
+  function pDown(x,y){ const g=nodeAt(x,y,true);
+    down={x,y,moved:false}; if(g){ dragging=g; reheat(); cv.style.cursor='grabbing'; } }
+  function pMove(x,y){
+    if(dragging){ dragging.x=x; dragging.y=y; dragging.vx=0; dragging.vy=0;
+      if(down && Math.abs(x-down.x)+Math.abs(y-down.y)>4) down.moved=true; reheat(); return; }
+    hover=nodeAt(x,y,false);
+    cv.style.cursor=(hover||nodeAt(x,y,true))?'grab':'default'; }
+  function pUp(x,y){
+    if(down && !down.moved){ const t=nodeAt(x,y,false);
+      if(t) selectNode(t); else { sel=null; panel.classList.remove('open'); } }
+    dragging=null; down=null; alphaTarget=0; cv.style.cursor='grab'; }
+
+  cv.addEventListener('mousemove',e=>{ const r=cv.getBoundingClientRect(); pMove(e.clientX-r.left,e.clientY-r.top); });
+  cv.addEventListener('mousedown',e=>{ const r=cv.getBoundingClientRect(); pDown(e.clientX-r.left,e.clientY-r.top); });
+  window.addEventListener('mouseup',e=>{ if(!down) return; const r=cv.getBoundingClientRect(); pUp(e.clientX-r.left,e.clientY-r.top); });
   cv.addEventListener('mouseleave',()=>{ hover=null; });
-  cv.addEventListener('mousedown',e=>{ const r=cv.getBoundingClientRect();
-    drag={x:e.clientX-r.left,y:e.clientY-r.top,x0:e.clientX-r.left,y0:e.clientY-r.top,moved:false};
-    cv.style.cursor='grabbing'; });
-  window.addEventListener('mouseup',e=>{ if(!drag) return;
-    if(!drag.moved){ const r=cv.getBoundingClientRect();
-      const n=nodeAt(e.clientX-r.left,e.clientY-r.top);
-      if(n) selectNode(n);
-      else { sel=null; panel.classList.remove('open'); } }
-    drag=null; cv.style.cursor='grab'; });
-  /* touch: one finger rotates */
-  cv.addEventListener('touchstart',e=>{ const t=e.touches[0],r=cv.getBoundingClientRect();
-    drag={x:t.clientX-r.left,y:t.clientY-r.top,x0:t.clientX-r.left,y0:t.clientY-r.top,moved:false}; },{passive:true});
-  cv.addEventListener('touchmove',e=>{ if(!drag) return;
-    const t=e.touches[0],r=cv.getBoundingClientRect(),x=t.clientX-r.left,y=t.clientY-r.top;
-    yaw+=(x-drag.x)*0.005; pitch+=(y-drag.y)*0.003;
-    if(Math.abs(x-drag.x0)+Math.abs(y-drag.y0)>6) drag.moved=true;
-    drag.x=x; drag.y=y; },{passive:true});
-  cv.addEventListener('touchend',e=>{ if(drag&&!drag.moved){
-      const t=e.changedTouches[0],r=cv.getBoundingClientRect();
-      const n=nodeAt(t.clientX-r.left,t.clientY-r.top);
-      if(n) selectNode(n); }
-    drag=null; },{passive:true});
+  /* touch: one finger drags a dot, a tap selects */
+  cv.addEventListener('touchstart',e=>{ const t=e.touches[0],r=cv.getBoundingClientRect(); pDown(t.clientX-r.left,t.clientY-r.top); },{passive:true});
+  cv.addEventListener('touchmove',e=>{ if(!dragging) return; const t=e.touches[0],r=cv.getBoundingClientRect();
+    pMove(t.clientX-r.left,t.clientY-r.top); e.preventDefault(); },{passive:false});
+  cv.addEventListener('touchend',e=>{ const t=e.changedTouches[0],r=cv.getBoundingClientRect(); pUp(t.clientX-r.left,t.clientY-r.top); },{passive:true});
 })();
 </script>"""
 

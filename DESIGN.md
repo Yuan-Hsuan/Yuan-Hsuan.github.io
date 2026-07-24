@@ -95,11 +95,13 @@ index numbers (scroll order = real information).
 - **Hero typewriter**: h1 "I work on `<word>`" — whole line Fraunces; typed word gold with
   block cursor; words: clean algorithms / the right data structure / NLP from scratch /
   AI infrastructure / learning in public.
-- **Knowledge globe** (the signature — protect it): fibonacci-sphere layout, slow idle
-  rotation, drag/touch to rotate, depth-scaled monochrome dots (topics solid, notes
-  smaller), labels: topics always (depth-faded), notes when front-facing, hover/click
-  focuses node + neighbours and dims the rest; click opens the side panel → `expandCard`.
-  Mono HUD readout bottom-right: real node/edge counts. Pauses off-screen.
+- **Knowledge map** (the signature — protect it): a flat **community map** — each of the four
+  domains (LeetCode / AI / Systems / Software) packs into its own cluster (hub topics central,
+  rim ragged) and the four clusters **overlap into one round mass**; domain names sit in the
+  open corners outside it. Monochrome dots (topics solid, notes smaller/fainter), labels:
+  hub topics (count ≥ 2) at rest, notes only once their topic is focused; hover/click focuses
+  node + neighbours and dims the rest; click opens the side panel → `expandCard`. Mono HUD
+  readout bottom-right: real node/edge counts. Only motion is a ~1px idle bob. Pauses off-screen.
 - **Black article blocks** (`.cardk`): gold mono meta · serif title · why-line ·
   tags + Read →; permanent crop marks (dim → gold on hover).
 - **Experience**: 320vh+ scroll track, sticky stage; left = kicker/h2/pitch quote
@@ -220,13 +222,10 @@ split bar (E/M/H) as a page element; "case study" style self-referential stat co
 
 **Parking lot (fine ideas, not yet earned):**
 
-- **Globe clustering（user asked 2026-07-16 — REMIND her when triggered）:** when the graph
-  passes **~200 nodes** (or the domain clusters become visually inseparable — today: 140),
-  reorganize the globe by category: spatial grouping per domain (systems / AI / LeetCode
-  each own a region, e.g. longitude sectors or community-force layout like her reference
-  `~/github/design-refs/graph-viz-node-link-layouts-reference.jpg` panel (c)), and/or a
-  domain color accent within the monochrome ramp. Check node count on every build that
-  adds notes; when the threshold nears, proactively propose the redesign.
+- **Domain tint on the knowledge map:** the clusters are monochrome and genuinely overlap, so
+  they read by density alone. If the four groups ever stop being separable at a glance, the
+  next lever is a very muted per-domain tint (the "B" mockup) — not a rainbow, and only if
+  density stops carrying it. (Clustering itself shipped 2026-07-22; see §11.)
 
 Also parked: RSS feed from write-ups; a 中文 mirror page;
 OG-image auto-regeneration in CI; auto-refreshing the contribution calendar (evaluated
@@ -269,3 +268,5 @@ rendered in our own style — and keep the "no backend / cookieless / fully-stat
 | 2026-07-20 | Curated pick #1 = ai-dev-workflow (AI building method); trio now workflow × LC 84 × site architecture (3 domains). `[[wikilink]]` cross-refs now resolve to clickable card-openers site-wide (`resolve_wikilinks`); dangling ones degrade to plain text |
 | 2026-07-16 | Globe fix: node order scattered by stable md5 hash — index-ordered fibonacci sphere had clumped notes/tags into latitude bands (notes packed at top). Resting labels only for topics with ≥2 notes; singletons name themselves on focus |
 | 2026-07-15 | Résumé synced to resume.md 7/12 overhaul: Broadcom = co-op (Mar 2021–Jun 2022, PDN bullet) + full-time (Jun 2022–Dec 2023), locations on both. Contribution calendar includes private-contribution counts (GitHub setting; counts only, no details) |
+| 2026-07-22 | 03 Activity contrast fixed: the empty cell `#e7e0d1` and level-1 `#eeddc2` were the same lightness (l1 even lighter), so a 1-commit day was invisible. New ramp recedes the empty (`#e6e0d2`) and starts the gold clearly "on" (`#e8c99a → #d9a866 → #c0863c → #8f5f26`), strictly darkening — GitHub's off→on jump in the cream palette |
+| 2026-07-22 | **Sphere → community map.** The rotating fibonacci globe is retired: each of the four domains now packs into its own cluster (hubs central via a 0.68 radial exponent, ragged rim via seeded jitter) and the four clusters **overlap into one round mass** — her reference `design-refs/graph-viz-node-link-layouts-reference.jpg` panel (c). Domain names sit in the open corners; no frames around clusters (rejected: per-cluster outline ring). Rotation/drag removed (nothing to rotate) — hover to focus, click a topic; touch = tap. `ci` (2-way, dead) → `dom` (4-way, load-bearing); md5 node shuffle deleted with the sphere. Groups read by density alone; muted per-domain tint parked in §9 if that ever stops working |
