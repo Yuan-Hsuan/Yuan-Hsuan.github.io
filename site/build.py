@@ -95,6 +95,10 @@ EXPERIENCE = [
 # Education lives as one quiet line in the pinned intro column, not a timeline entry.
 EDUCATION_LINE = "M.S. Computer Science — USC (2024–25) · B.S. ECE, minor CS — NYCU"
 
+# A verifiable credential, right under education (name matches the Skilljar verify page verbatim).
+CERT = dict(name="Anthropic · AI Fluency: Framework & Foundations",
+            url="https://verify.skilljar.com/c/ufyin5wu2gk3")
+
 # ---- external AI notes (single source of truth: the CS224n study repo) -------
 # The notes live in the sibling repo; we read them at build time so the site is
 # never a stale copy — edit the note there, re-run build.py, done. (Images are
@@ -391,8 +395,31 @@ def build_graph(cards):
 
 
 def load_solved():
-    p = ROOT / "site" / "solved.json"
-    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    """The hero's LeetCode total. Auto-fetched from LeetCode's PUBLIC GraphQL (no cookie),
+    cached in site/solved.json, offline-safe — same shape as load_contrib(). The per-problem
+    `problems` list (populated by build_solved.py from a cookie'd dump) isn't rendered, so we
+    only refresh `counts`/`username` here and keep whatever list is already cached."""
+    cache = ROOT / "site" / "solved.json"
+    data = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() else {
+        "username": GITHUB_USER, "counts": {}, "problems": []}
+    try:
+        body = json.dumps({
+            "query": "query($u:String!){matchedUser(username:$u){"
+                     "submitStatsGlobal{acSubmissionNum{difficulty count}}}}",
+            "variables": {"u": GITHUB_USER}}).encode("utf-8")
+        req = urllib.request.Request(
+            "https://leetcode.com/graphql", data=body,
+            headers={"Content-Type": "application/json", "Referer": "https://leetcode.com",
+                     "User-Agent": "Mozilla/5.0 (build.py)"})
+        r = json.loads(urllib.request.urlopen(req, timeout=12).read().decode("utf-8"))
+        nums = r["data"]["matchedUser"]["submitStatsGlobal"]["acSubmissionNum"]
+        by = {x["difficulty"].lower(): x["count"] for x in nums}   # all/easy/medium/hard
+        data["counts"] = {"total": by.get("all", 0), "easy": by.get("easy", 0),
+                          "medium": by.get("medium", 0), "hard": by.get("hard", 0)}
+        cache.write_text(json.dumps(data, ensure_ascii=False, indent=0), encoding="utf-8")
+    except Exception as exc:                                        # offline / blocked → cache
+        print(f"  (leetcode fetch failed: {exc}; using cached solved.json)")
+    return data if data.get("counts") else None
 
 
 # ---- GitHub contribution calendar (section 03) --------------------------------
@@ -604,6 +631,7 @@ def experience_html():
             <a class="btn primary" href="{LINKEDIN_URL}" target="_blank" rel="noopener">Connect me on LinkedIn ↗</a>
           </div>
           <p class="xp-edu">{EDUCATION_LINE}</p>
+          <p class="xp-cert">Certified · <a href="{CERT['url']}" target="_blank" rel="noopener">{esc(CERT['name'])} ↗</a></p>
         </div>
         <div class="xp-right">
           <div class="rail" aria-hidden="true"><i id="railfill"></i></div>
@@ -1216,6 +1244,10 @@ h1,h2,h3{text-wrap:balance}
 .xp-left h2{font-size:clamp(1.4rem,2vw,1.9rem)}
 .xp-edu{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;color:var(--muted);
   margin:1.4rem 0 0;text-transform:uppercase}
+.xp-cert{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;color:var(--muted);
+  margin:.5rem 0 0;text-transform:uppercase}
+.xp-cert a{color:var(--gold);text-decoration:none}
+.xp-cert a:hover{text-decoration:underline}
 .xp-when{font-family:var(--mono);font-size:.68rem;letter-spacing:.07em;
   text-transform:uppercase;color:var(--gold)}
 .xp-item h3{font-family:var(--serif);font-weight:600;margin:.25rem 0 0;font-size:1.15rem}
