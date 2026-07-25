@@ -139,9 +139,13 @@ def _inline(s: str) -> str:
     return s
 
 
-def render_body(md: str) -> str:
+def render_body(md: str, base: str = "") -> str:
     """Markdown → HTML, protecting LaTeX math ($…$ / $$…$$) from the markdown pass so KaTeX
-    (auto-render, loaded in <head>) can typeset it in the browser."""
+    (auto-render, loaded in <head>) can typeset it in the browser.
+
+    `base` = the note's folder relative to ROOT (e.g. "leetcode"). Notes reference images by a
+    path relative to their own .md (so IDE markdown preview finds them); we prepend `base` here so
+    the same src resolves from the site root too. Absolute/http srcs are left untouched."""
     math = []
     def stash(m):
         math.append(m.group(0)); return f"@@MATH{len(math)-1}@@"
@@ -150,6 +154,10 @@ def render_body(md: str) -> str:
     out = md_to_html(md)
     for i, m in enumerate(math):
         out = out.replace(f"@@MATH{i}@@", m)
+    if base:                                                           # note-relative img src -> site-root
+        out = re.sub(r'<img src="([^"]*)"',
+                     lambda m: m.group(0) if m.group(1).startswith(("http://", "https://", "/"))
+                     else f'<img src="{base}/{m.group(1)}"', out)
     return out
 
 
@@ -252,7 +260,7 @@ def collect():
                 "words": len(re.sub(r"```.*?```", " ", body, flags=re.S).split()),
                 "related": related,
                 "source": str(meta.get("source", "") or ""),
-                "body_html": render_body(body),
+                "body_html": render_body(body, str(path.parent.relative_to(ROOT))),
             })
     cards.extend(external_ai_cards())
     resolve_wikilinks(cards)

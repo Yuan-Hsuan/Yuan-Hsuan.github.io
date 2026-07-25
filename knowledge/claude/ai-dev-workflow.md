@@ -15,7 +15,7 @@ visibility: public
 
 **At a glance:** `Explore → Spec → Plan → Build a chunk → Verify → Commit → loop`.
 
-![The workflow as a flowchart: explore, spec, and plan happen before any code; then a build → verify → commit loop runs one chunk at a time](knowledge/claude/ai-dev-workflow.svg)
+![The workflow as a flowchart: explore, spec, and plan happen before any code; then a build → verify → commit loop runs one chunk at a time](imgs/ai-dev-workflow.svg)
 
 The counter-intuitive rule: **spend ~1/3 of total effort BEFORE any code gets written.**
 Anthropic's finding — the explore + plan phases are the *cheapest in tokens and the most
