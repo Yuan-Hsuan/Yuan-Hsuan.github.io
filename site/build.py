@@ -1724,7 +1724,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const c=CARDS.find(x=>x.id===id); if(!c||!reader) return;
     lastFocus=document.activeElement;
     rTitle.textContent=c.title;
-    rPills.innerHTML=domPill(c.domain)+diffPill(c.difficulty)+'<span class="pill">mastery '+c.mastery+'/5</span>';
+    rPills.innerHTML=domPill(c.domain)+diffPill(c.difficulty);
     rBody.innerHTML=c.body_html; rBody.scrollTop=0;
     reader.hidden=false; document.body.classList.add('lock');
     if(window.renderMathInElement) renderMathInElement(rBody,{delimiters:[

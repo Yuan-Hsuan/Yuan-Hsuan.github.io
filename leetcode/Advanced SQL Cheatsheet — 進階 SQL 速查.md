@@ -4,9 +4,10 @@ domain: leetcode
 title: Advanced SQL Cheatsheet — 進階 SQL 速查
 tags: [sql, database, window-functions, joins]
 difficulty: hard
-mastery: 1
 visibility: public
 source: https://leetcode.com/studyplan/top-sql-50/
+importance: 1
+last_reviewed: 2026-07-17
 ---
 
 <!-- ⚠️ PUBLISH CHECKLIST (before the first `## `, so build.py drops it — will NOT show on the site):
