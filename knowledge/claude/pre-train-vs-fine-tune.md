@@ -1,19 +1,23 @@
 ---
 id: ai-pre-train-vs-fine-tune
 domain: ai
-title: Pre-train vs Fine-tune — and What You Can Actually Train（預訓練 vs 微調）
+title: Pre-train vs Fine-tune — and What You Can Actually Train
 tags: [ai-foundations, training, fine-tuning, lora, generative-ai]
 mastery: 1
 source: https://anthropic.skilljar.com/claude-101/
 visibility: public
 ---
 
-## 1. Idea: Training Is Two Stages（訓練分兩段）
-* **Pre-training（預訓練）** — the model reads internet-scale text and learns to predict the
-  next token. Output = a **base model**: a powerful autocomplete that knows language and the
-  world, but isn't yet a helpful assistant. This is the giant, expensive stage — the cluster /
-  compute from [[ai-traditional-to-generative-ai]].
-* **Fine-tuning / post-training（微調）** — take that base model and *specialize* it. Two common steps:
+## 1. Idea: Training Is Two Stages
+
+### **Pre-training** = **base model**
+* Pre-training is the first step, which involves training the model from scratch on **large unlabed corpora** scraped from the internet, books and social media. 
+* This phase provides the model with the ability to acquire the general understanding of language, syntax, and factual information and generate human-like content.
+* This is the giant, expensive stage — the cluster compute.
+
+### **Fine-tuning = take that base model and specialize**
+Fine-tuning is the advanced phase that employs more domain-specific datasets to fine-tune the model’s parameters, customizing it to the specific nuances of a task or domain. The technique significantly enhances the model’s knowledge, aligning it with particular industry standards.
+Two common steps:
   * **SFT (supervised fine-tuning)** — train on curated `instruction → good answer` pairs so
     it follows instructions.
   * **RLHF / preference tuning** — humans rank responses; the model learns to prefer the

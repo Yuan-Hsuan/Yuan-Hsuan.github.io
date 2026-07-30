@@ -11,9 +11,11 @@ Each note is SCHEMA frontmatter + a short, interview-style write-up:
 
 - **🎙️ Naive Solution** — the brute-force baseline and why it's too slow. Skipped when a
   problem has no real naive→optimal twist.
-- **🚀 Pitch** — how I'd explain the solution out loud: *The Bottleneck Observation* → *The
-  Strategy* → *The Precise Execution*, then a **Complexity** block.
-- **🛠️ Optimization** — the final C++ code.
+- **🚀 Pitch** — how I'd explain the solution out loud: 
+*The Bottleneck Observation* → 
+*The Strategy* → (This approach reduces the time complexity down to $O()$.)
+*The Precise Execution*, then a **Complexity** block.
+- **🛠️ Code Review** — the final C++ code.
 - Optional: **🛡️ Defensive Coding** and a **💡 Heuristic Challenge** (a harder follow-up).
 
 ## The core patterns
@@ -32,6 +34,7 @@ Each note is SCHEMA frontmatter + a short, interview-style write-up:
 | **linked-list** | in-place reversal, fast/slow pointers (cycle) |
 | **backtracking** | generate all permutations/subsets/combinations |
 | **greedy** | locally-optimal choice provably gives global optimum |
+| **binary-search-tree | in-order traversal |
 
 (Which patterns already have write-ups shows on the site's practice-log filters — the notes'
 `tags` are the source of truth, no hand-kept column here.)

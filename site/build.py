@@ -8,7 +8,7 @@ bands (design contract: ../DESIGN.md):
 
   hero (thesis + knowledge graph) → 01 start here → 02 experience (pinned scrolly,
   black) → 03 activity (GitHub calendar) → 04 the system (code window, black) →
-  05 AI notes → 06 practice log (write-up archive) → footer (black)
+  05 how I build → 06 write-ups (learning-tracks archive) → footer (black)
 
 No dependencies (stdlib only). No backend. GitHub Pages serves the output.
 The page is assembled by plain string concatenation (not str.format) so the
@@ -346,7 +346,7 @@ def build_graph(cards):
     """Bipartite graph for the hero knowledge map: every note and every topic is a node;
     notes link to their topics (+ any [[wikilinks]]). `dom` buckets each node into one of
     four domains — the JS packs each domain into its own cluster."""
-    DOM_I = {"leetcode": 0, "ai": 1, "systems": 2, "software-engineering": 3}
+    DOM_I = {"leetcode": 0, "ai": 1, "systems": 2}
     ids = {c["id"] for c in cards}
     tag_dom = defaultdict(Counter)
     tag_notes = defaultdict(list)
@@ -530,7 +530,6 @@ def hero_html(cards, solved):
                    and c.get("source") != CS224N_SOURCE)
     n_sys = sum(1 for c in cards if c["domain"] == "systems")
     n_lc = sum(1 for c in cards if c["domain"] == "leetcode")
-    n_se = sum(1 for c in cards if c["domain"] == "software-engineering")
     total = (solved or {}).get("counts", {}).get("total", 0)
     user = (solved or {}).get("username", GITHUB_USER)
     return f"""
@@ -550,10 +549,9 @@ def hero_html(cards, solved):
         </div>
         <div class="vdiv" aria-hidden="true"></div>
         <div class="sgroup">
-          <div class="sl">Systems / SWE</div>
+          <div class="sl">Systems / Eng</div>
           <div class="srow">
-            <div class="stat"><div class="n odo" data-n="{n_sys}">0</div><div class="l">os · network</div></div>
-            <div class="stat"><div class="n odo" data-n="{n_se}">0</div><div class="l">engineering</div></div>
+            <div class="stat"><div class="n odo" data-n="{n_sys}">0</div><div class="l">os · net · sw</div></div>
           </div>
         </div>
         <div class="vdiv" aria-hidden="true"></div>
@@ -820,7 +818,22 @@ def ai_notes_html(cards):
 
 
 DOMAIN_LABELS = {"leetcode": "LeetCode", "ai": "AI Knowledge",
-                 "software-engineering": "Software Eng", "systems": "Systems"}
+                 "systems": "Systems / Eng"}
+
+# Per-tab "learning track" intro for section 06 — headline + one honest line. The empty key
+# is the All tab; the AI line is the thesis rescued from the old section 05. (Draft — refine.)
+TRACKS = {
+    "": ("Everything, written up.",
+         "Every solve, note, and deep-dive — the whole practice, searchable."),
+    "leetcode": ("Patterns, not memorization.",
+                 "Each problem written up as a reusable pattern: why it works, not just the code."),
+    "ai": ("Theory by hand, tools by habit.",
+           "Stanford CS224n worked on paper — the math before the PyTorch — plus Anthropic’s "
+           "Claude courses, because I build with AI every day and study how to drive it well."),
+    "systems": ("The layer under the app.",
+                "OS, networking, and concurrency from first principles — how the machine "
+                "actually runs the code."),
+}
 
 
 # ---- section 06: workflow flowchart (native, web-designed; DESIGN.md §11) ------
@@ -860,7 +873,7 @@ PHASES = [
 ]
 
 
-WORKFLOW_SVG = ROOT / "knowledge" / "claude" / "ai-dev-workflow.svg"
+WORKFLOW_SVG = ROOT / "knowledge" / "claude" / "imgs" / "ai-dev-workflow.svg"
 
 
 def build_html():
@@ -888,7 +901,7 @@ def build_html():
   <section class="band" id="build" tabindex="-1">
     <div class="wrap wide">
       <div class="sec-head rv">
-        <p class="kicker"><span class="idx">06</span><span class="dec">How I build</span></p>
+        <p class="kicker"><span class="idx">05</span><span class="dec">How I build</span></p>
         <h2>How I build software with AI.</h2>
         <p>My repeatable <a href="#card-ai-dev-workflow" onclick="expandCard('ai-dev-workflow');return false">method</a>
         as a flowchart — spec first, then a build → verify → commit <b>loop</b>, one chunk at a time.
@@ -911,21 +924,24 @@ def build_html():
 
 
 def log_html(cards, solved):
-    dom_opts = "".join(
-        f'<option value="{esc(d)}">{esc(DOMAIN_LABELS.get(d, d.title()))}</option>'
-        for d in sorted({c["domain"] for c in cards}))
+    dcount = Counter(c["domain"] for c in cards)
+    tabs = (f'<button class="wtab is-on" data-dom="" role="tab" aria-selected="true">'
+            f'All <i>{len(cards)}</i></button>')
+    tabs += "".join(
+        f'<button class="wtab" data-dom="{esc(d)}" role="tab" aria-selected="false">'
+        f'{esc(DOMAIN_LABELS.get(d, d.title()))} <i>{dcount[d]}</i></button>'
+        for d in sorted(dcount, key=lambda d: -dcount[d]))
+    head, sub = TRACKS[""]
     return f"""
   <section class="band" id="log">
     <div class="wrap wide">
       <div class="sec-head rv">
-        <p class="kicker"><span class="idx">07</span><span class="dec">Write-ups</span></p>
-        <h2>Everything, written up.</h2>
-        <p>All {len(cards)} articles — LeetCode patterns, CS224n notes, engineering
-        deep-dives. Click a card to read.</p>
+        <p class="kicker"><span class="idx">06</span><span class="dec">Write-ups</span></p>
+        <h2 id="track-head">{esc(head)}</h2>
+        <p id="track-sub">{esc(sub)}</p>
       </div>
+      <div class="wtabs rv" id="wtabs" role="tablist" aria-label="Filter by domain">{tabs}</div>
       <div class="controls rv">
-        <select id="f-domain" aria-label="Filter by domain"><option value="">All domains</option>
-          {dom_opts}</select>
         <select id="f-diff" aria-label="Filter by difficulty"><option value="">All difficulty</option>
           <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
         <select id="f-tag" aria-label="Filter by topic"><option value="">All topics</option></select>
@@ -933,6 +949,7 @@ def log_html(cards, solved):
         <span class="count" id="c-count"></span>
       </div>
       <div id="grid" class="tilegrid"></div>
+      <div class="more" id="more-wrap"><button id="show-more" class="btn-more">Show more</button></div>
     </div>
   </section>
 
@@ -969,7 +986,6 @@ FOOTER = f"""
     <a class="fn-brand" href="#top">Yuan-Hsuan Wen</a>
     <a href="#start" data-sec="start">Start here</a>
     <a href="#xp" data-sec="xp">Résumé</a>
-    <a href="#ai" data-sec="ai">AI notes</a>
     <a href="#build" data-sec="build">How I build</a>
     <a href="#log" data-sec="log">Write-ups</a>
     <a class="ext" href="https://github.com/{GITHUB_USER}" target="_blank" rel="noopener">GitHub ↗</a>
@@ -982,6 +998,7 @@ def page(cards, graph, solved, contrib):
             f"const CARDS = {json.dumps(cards, ensure_ascii=False)};\n"
             f"const GRAPH = {json.dumps(graph, ensure_ascii=False)};\n"
             f"const TAGS = {json.dumps(sorted({t for c in cards for t in c['tags']}), ensure_ascii=False)};\n"
+            f"const TRACKS = {json.dumps(TRACKS, ensure_ascii=False)};\n"
             f"const CONTRIB = {json.dumps(contrib, ensure_ascii=False)};\n"
             "</script>")
     build_month = date.today().strftime("%Y-%m")
@@ -991,7 +1008,6 @@ def page(cards, graph, solved, contrib):
            + experience_html()
            + activity_html(contrib)
            + system_html()
-           + ai_notes_html(cards)
            + build_html()
            + log_html(cards, solved)
            + FOOTER + "\n" + data + "\n" + SCRIPT + "\n</body>\n</html>")
@@ -1035,7 +1051,7 @@ HEAD = """<!doctype html>
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -1049,6 +1065,7 @@ HEAD = """<!doctype html>
   --easy:#8a8a8a; --medium:#5b5a56; --hard:#232323;
   --gh0:#e6e0d2; --gh1:#e8c99a; --gh2:#d9a866; --gh3:#c0863c; --gh4:#8f5f26;
   --serif:"Fraunces",Georgia,serif;
+  --read:Charter,"Bitstream Charter","Sitka Text",Cambria,Georgia,serif;  /* Medium's reading serif (Charter ships on macOS/iOS; Georgia fallback) */
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --ease:cubic-bezier(.4,0,.2,1);
@@ -1392,10 +1409,26 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 @media (prefers-reduced-motion:reduce){ .wf-map svg.wf-looping .wf-loop-arrow{animation:none} }
 
 /* ---- write-up archive: shopping-grid tiles + reader overlay ---- */
+.wtabs{display:flex;gap:.2rem;overflow-x:auto;margin:0 0 16px;border-bottom:1px solid var(--border);
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wtabs::-webkit-scrollbar{display:none}
+.wtab{flex:0 0 auto;background:none;border:none;cursor:pointer;font-family:var(--mono);
+  font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  padding:.55rem .85rem;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.wtab i{font-style:normal;opacity:.55;margin-left:.35em;font-variant-numeric:tabular-nums}
+.wtab:hover{color:var(--fg)}
+.wtab.is-on{color:var(--fg);border-bottom-color:var(--gold)}
+.wtab:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--gold)}
 .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
 .controls select,.controls input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);
   background:var(--surface);color:var(--fg);font-size:1rem;font-family:inherit}
 .controls .count{color:var(--muted);font-size:.82rem;margin-left:auto;font-variant-numeric:tabular-nums}
+.more{display:flex;justify-content:center;margin:28px 0 0}
+.btn-more{background:none;border:1px solid var(--border);border-radius:9px;cursor:pointer;
+  font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding:.72em 1.7em;transition:border-color .15s,color .15s}
+.btn-more:hover{border-color:var(--gold);color:var(--fg)}
+.btn-more:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--gold)}
 .tilegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
 .tile{background:var(--surface);border:1px solid var(--border);border-radius:0;
   padding:1.1rem 1.2rem 1rem;display:flex;flex-direction:column;gap:.6rem;cursor:pointer;
@@ -1431,22 +1464,31 @@ a.gh-title:hover{color:var(--fg);text-decoration:none}
 .reader[hidden]{display:none}
 .reader-scrim{position:absolute;inset:0;background:rgba(20,19,17,.55);backdrop-filter:blur(3px)}
 .reader-panel{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:2px;
-  width:min(780px,100%);max-height:min(88svh,900px);display:flex;flex-direction:column;
+  width:min(760px,100%);max-height:min(88svh,900px);display:flex;flex-direction:column;
   box-shadow:0 30px 80px rgba(0,0,0,.35);animation:readerIn .22s var(--ease)}
 @keyframes readerIn{from{opacity:0;transform:scale(.97) translateY(8px)}}
 @media (prefers-reduced-motion:reduce){ .reader-panel{animation:none} }
 .reader-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
-  padding:18px 22px 14px;border-bottom:1px solid var(--border)}
-.reader-head h3{font-family:var(--serif);font-weight:600;margin:0;font-size:1.35rem;letter-spacing:-.01em;
+  padding:clamp(26px,4vw,40px) clamp(20px,5vw,52px) 18px;border-bottom:1px solid var(--border)}
+.reader-head h3{font-family:var(--sans);font-weight:700;margin:0;
+  font-size:clamp(1.6rem,3.2vw,1.95rem);line-height:1.22;letter-spacing:-.02em;
   flex:1 1 100%;padding-right:2rem}
 .reader-pills{display:flex;gap:6px;flex-wrap:wrap}
 .r-close{position:absolute;right:14px;top:14px;background:var(--surface);border:1px solid var(--border);
   color:var(--muted);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:.95rem;line-height:1}
 .r-close:hover{color:var(--fg);border-color:var(--fg)}
 .r-close:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold)}
-.rbody{overflow:auto;padding:8px 22px 24px;overscroll-behavior:contain}
+.rbody{overflow:auto;padding:8px clamp(20px,5vw,52px) 40px;overscroll-behavior:contain;
+  font-family:var(--read);font-size:1.13rem;line-height:1.72;color:var(--fg)}
 body.lock{overflow:hidden}
-.rbody h3,.rbody h4,.rbody h5{font-family:var(--serif);font-weight:500;letter-spacing:-.01em}
+.rbody p{margin:0 0 1.15em}
+.rbody > :first-child{margin-top:0}
+.rbody ul,.rbody ol{margin:0 0 1.15em;padding-left:1.3em}
+.rbody li{margin:.32em 0}
+.rbody h2,.rbody h3,.rbody h4,.rbody h5{font-family:var(--sans);font-weight:600;letter-spacing:-.01em}
+.rbody h2{font-size:1.5rem;margin:1.8em 0 .5em}
+.rbody h3{font-size:1.2rem;margin:1.5em 0 .4em}
+.rbody h4{font-size:1.02rem;margin:1.3em 0 .3em}
 .rbody pre{background:var(--surface2);border:1px solid var(--border);padding:14px 16px;border-radius:10px;overflow-x:auto}
 .rbody code{font-family:var(--mono);font-size:.86em}
 .rbody pre code{font-size:.82rem}
@@ -1690,7 +1732,7 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tagSel=$('f-tag');
   TAGS.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;tagSel.appendChild(o);});
   const diffPill=d=>d?'<span class="pill diff-'+d+'">'+d+'</span>':'';
-  const DOM_LABEL={leetcode:'LeetCode',ai:'AI','software-engineering':'Software Eng',systems:'Systems'};
+  const DOM_LABEL={leetcode:'LeetCode',ai:'AI',systems:'Systems / Eng'};
   const domPill=d=>'<span class="pill domain'+(d==='ai'?' ai':'')+'">'+(DOM_LABEL[d]||d)+'</span>';
   function tileHTML(c,i){
     return '<article class="tile" id="card-'+c.id+'" data-id="'+c.id+'" tabindex="0" role="button" '
@@ -1700,21 +1742,36 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
       +'<div class="tags">'+c.tags.slice(0,3).map(t=>'<span>#'+t+'</span>').join('')+'</div>'
       +'<div class="t-foot"><span>~'+c.words+' words</span><span class="go">Read</span></div></article>';
   }
-  function draw(list){
-    grid.innerHTML=list.map(tileHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
-    $('c-count').textContent=list.length+' / '+CARDS.length;
+  const PAGE=24;
+  let activeDom='', filtered=CARDS.slice(), shown=PAGE;   // Medium-style: show a page, "Show more" appends
+  const more=$('show-more');
+  function render(){
+    const slice=filtered.slice(0,shown);
+    grid.innerHTML=slice.map(tileHTML).join('')||'<p style="color:var(--muted)">No cards match.</p>';
+    $('c-count').textContent=filtered.length+' / '+CARDS.length;
+    if(more) more.parentNode.style.display = shown<filtered.length ? '' : 'none';
     grid.querySelectorAll('.tile').forEach(el=>{
       el.onclick=()=>openReader(el.dataset.id);
       el.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openReader(el.dataset.id); } };
     });
   }
-  function apply(){
-    const d=$('f-domain').value,diff=$('f-diff').value,tag=$('f-tag').value,q=$('f-search').value.toLowerCase();
-    draw(CARDS.filter(c=>(!d||c.domain===d)&&(!diff||c.difficulty===diff)&&(!tag||c.tags.includes(tag))
-      &&(!q||(c.title+' '+c.tags.join(' ')).toLowerCase().includes(q))));
+  function refilter(){                                 // filter changed → recompute + reset the reveal
+    const diff=$('f-diff').value,tag=$('f-tag').value,q=$('f-search').value.toLowerCase();
+    filtered=CARDS.filter(c=>(!activeDom||c.domain===activeDom)&&(!diff||c.difficulty===diff)&&(!tag||c.tags.includes(tag))
+      &&(!q||(c.title+' '+c.tags.join(' ')).toLowerCase().includes(q)));
+    shown=PAGE; render();
   }
-  ['f-domain','f-diff','f-tag','f-search'].forEach(id=>$(id).addEventListener('input',apply));
-  draw(CARDS);
+  ['f-diff','f-tag','f-search'].forEach(id=>$(id).addEventListener('input',refilter));
+  if(more) more.addEventListener('click',()=>{ shown+=PAGE; render(); });
+  const wtabs=$('wtabs'), tHead=$('track-head'), tSub=$('track-sub');
+  if(wtabs) wtabs.querySelectorAll('.wtab').forEach(b=>b.addEventListener('click',()=>{
+    activeDom=b.dataset.dom;
+    wtabs.querySelectorAll('.wtab').forEach(x=>{const on=x===b;
+      x.classList.toggle('is-on',on); x.setAttribute('aria-selected',on);});
+    const t=TRACKS[activeDom]; if(t&&tHead){ tHead.textContent=t[0]; tSub.textContent=t[1]; }
+    refilter();
+  }));
+  refilter();
 
   /* reader overlay */
   const reader=$('reader'), rTitle=$('reader-title'), rPills=$('reader-pills'),
@@ -1790,8 +1847,8 @@ const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   /* force-directed community graph: springs pull linked nodes together, every pair repels
      (within range), and each node drifts toward its domain's home — the four domains loosely
      group but nodes are draggable and the whole thing settles into a spread mass. */
-  const DOMS=[{name:'LeetCode'},{name:'AI'},{name:'Systems'},{name:'Software'}];
-  const DC=[[0.449,0.453],[0.551,0.447],[0.461,0.577],[0.544,0.565]];
+  const DOMS=[{name:'LeetCode'},{name:'AI'},{name:'Systems / Eng'}];
+  const DC=[[0.44,0.45],[0.57,0.45],[0.505,0.60]];      /* triangular, pulled into one mass */
   const counts=[0,0,0,0]; N.forEach(n=>counts[n.dom]++);
   DOMS.forEach((d,i)=>d.count=counts[i]);
   const deg=adj.map(a=>a.length);

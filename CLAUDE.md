@@ -9,6 +9,9 @@ which is generated — **never hand-edit it**.
 
 ## Her visual taste（美感守則 — 這個網站的判準）
 
+- **She decides by SEEING, not by spec.** Give her a built thing / mockup / reference-site
+  teardown, never an abstract preference question. When she critiques, she sends reference
+  URLs — dissect their actual HTML/CSS, don't paraphrase them from memory.
 - Warm paper ground + near-black ink + **ONE gold accent moment per viewport**; serif
   display + mono for all metadata/numbers (`tabular-nums`); wide layouts (~1680px) with
   varied compositions — never uniform single-column stacks; a long vertical list is a smell.
@@ -78,5 +81,9 @@ data sources at build time. Never hand-type a number into copy — that's how th
   "SAFETY BELT" line search); renaming that comment breaks the pane extraction.
 - Mockup HTML files for review live OUTSIDE this repo (e.g. `~/github/mockup-*.html`) —
   anything committed here goes live.
+- **Never write a bare `$` price in a note.** KaTeX auto-render is configured with `$…$` as an
+  inline-math delimiter, and `render_body()` stashes math *before* the markdown pass — so
+  `$5 / $25` pairs into a bogus math span and renders mangled (backticks don't save it; the
+  stash runs first). Write `5 / 25` and put "USD" in the label instead.
 - `.pages` files are zip + snappy; the résumé was extracted once already —
   `../mind/resume/resume.md` is now the readable source.
