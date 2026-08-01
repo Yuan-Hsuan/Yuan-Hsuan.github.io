@@ -250,7 +250,14 @@ def collect():
             if meta.get("visibility") != "public":                  # SAFETY BELT
                 continue
             domain = meta.get("domain", "leetcode" if d == "leetcode" else "ai")
+            # New schema: `pattern` (one category) + `concepts` (techniques). The primary
+            # pattern leads the tag list so it shows first everywhere. Notes still on the old
+            # `tags` key (cheatsheets, sibling repos) fall back unchanged.
             tags = meta.get("tags", []) if isinstance(meta.get("tags"), list) else []
+            pattern = meta.get("pattern", "")
+            concepts = meta.get("concepts", []) if isinstance(meta.get("concepts"), list) else []
+            if pattern:
+                tags = [pattern] + concepts
             related = meta.get("related", []) if isinstance(meta.get("related"), list) else []
             related += [w.strip() for w in WIKILINK.findall(body)]   # [[wikilinks]] in body
             cards.append({

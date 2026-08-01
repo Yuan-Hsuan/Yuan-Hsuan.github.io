@@ -8,15 +8,9 @@ source: https://anthropic.skilljar.com/claude-code-in-action
 visibility: public
 ---
 
-Here is the structured English summary of your notes:
-
-## A Guide to Managing Long AI Tasks
-
 A long task is not just a scaled-up quick task. While quick tasks are simple loops (ask, work, check), complex tasks like cross-file refactoring can run for hours.
 
 To succeed, you need two core habits: **Scope first, then steer.**
-
----
 
 ### 1. Scope First: Plan Mode
 

@@ -2,8 +2,9 @@
 
 Interviews aren't about memorizing 500 problems — they're about recognizing which of ~12
 **patterns** a problem maps to. Notes live flat here, one file per problem (named by its
-LeetCode number + title); the pattern classification lives in each note's `tags` frontmatter,
-since one problem often maps to several patterns.
+LeetCode number + title). Each note carries a two-level classification in its frontmatter:
+one **`pattern`** (which shelf the problem lives on) plus any **`concepts`** (the specific
+techniques it teaches).
 
 ## Note structure
 
@@ -34,14 +35,18 @@ Each note is SCHEMA frontmatter + a short, interview-style write-up:
 | **linked-list** | in-place reversal, fast/slow pointers (cycle) |
 | **backtracking** | generate all permutations/subsets/combinations |
 | **greedy** | locally-optimal choice provably gives global optimum |
-| **binary-search-tree | in-order traversal |
+| **binary-search-tree** | in-order traversal gives sorted order; validate/search by range |
+
+The `pattern` is **one** of these shelves; the concrete trick (Manacher, Boyer-Moore,
+monotonic-stack, patience-sort…) goes in `concepts`, not `pattern`.
 
 (Which patterns already have write-ups shows on the site's practice-log filters — the notes'
-`tags` are the source of truth, no hand-kept column here.)
+`pattern` / `concepts` are the source of truth, no hand-kept column here.)
 
 ## Frontmatter fields
 
-- `tags` — the pattern(s); the source of truth for classification.
+- `pattern` — the one canonical category the problem belongs to (the shelf).
+- `concepts` — the specific techniques/algorithms it uses (list; optional).
 - `difficulty` — easy / medium / hard.
 - `importance` — 1–5, how much I want to re-drill this. My review-priority knob; I bump it
   before an interview.

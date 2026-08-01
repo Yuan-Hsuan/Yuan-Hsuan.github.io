@@ -8,15 +8,10 @@ source: https://anthropic.skilljar.com/claude-101/
 visibility: public
 ---
 
-## 1. Idea: Assistant ≠ Chatbox（助理不只是聊天框）
-A chatbox only *talks back*; an assistant **does things**. Claude can read and write
-files, run code, search the web, call external tools, and carry a multi-step task to
-completion. The chat window is just **one interface** to it — the conversation is how it
-communicates, not what it *is*.
+A chatbox only *talks back*; an assistant **does things**. Claude can read and write files, run code, search the web, call external tools, and carry a multi-step task to completion. The chat window is just **one interface** to it — the conversation is how it communicates, not what it *is*.
 
-## 2. Why / intuition: One Engine, Many Bodies（一顆引擎，多種載體）
-The same underlying model powers many different products. Each product wraps the engine
-with a different **body** — different tools, context, and permissions:
+## Why / intuition: One Engine, Many Bodies
+The same underlying model powers many different products. Each product wraps the engine with a different **body** — different tools, context, and permissions:
 
 * **claude.ai** — the familiar chat app (web / desktop / mobile).
 * **Claude Code** — the same engine living in the terminal and IDE, with file-system and
@@ -29,7 +24,7 @@ The mental model: **capability = model + tools + context**. Swap the body and th
 model becomes a different product. That's why "Claude" isn't one app — it's an assistant
 available through many apps.
 
-## 3. Example
+## Example
 Ask the chat app "what's in my project folder?" and it can only guess. Ask Claude Code
 the same question and it **runs `ls`, reads the files, and answers from evidence** —
 same model, different tools, completely different usefulness.
