@@ -227,7 +227,9 @@ def md_to_html(md: str) -> str:
         buf = []                                                     # paragraph
         while i < n and lines[i].strip() and not re.match(r"(#{1,6}\s|\s*[-*]\s|\s*\d+\.\s|>|\||```)", lines[i]):
             buf.append(lines[i]); i += 1
-        out.append("<p>" + _inline(" ".join(buf)) + "</p>")
+        if not buf:            # block-looking line no branch claimed (a `|` row with no
+            buf.append(lines[i]); i += 1   # separator underneath) — take it as prose, or
+        out.append("<p>" + _inline(" ".join(buf)) + "</p>")   # `i` never moves and we hang
     return "\n".join(out)
 
 
@@ -752,7 +754,6 @@ def system_html():
     src = Path(__file__).read_text(encoding="utf-8").splitlines()
     belt = next((i for i, l in enumerate(src) if "SAFETY BELT" in l and "if meta" in l), None)
     if belt is not None:
-        start = belt - 7
         add("build", "site/build.py ●", "site/build.py — this generator, reading itself",
             lines=src[:150], start=1, hl=_hl_py)
     add("out", "index.html", "index.html — the generated output GitHub Pages serves",
