@@ -89,7 +89,7 @@ index numbers (scroll order = real information).
 
 ## 5. Components (spec by section)
 
-- **Floating pill navigator**: serif brand "Yuan-Hsuan Wen" · section links (active =
+- **Floating pill navigator**: serif brand "Phoebe Wen" · section links (active =
   ink pill) · GitHub/LinkedIn external links. No dividers. Brand + externals hidden ≤640px.
 - **Scroll progress**: 2px gold meter fixed at the very top.
 - **Hero typewriter**: h1 "I work on `<word>`" — whole line Fraunces; typed word gold with

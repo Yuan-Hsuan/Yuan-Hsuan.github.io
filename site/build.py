@@ -62,7 +62,7 @@ EXPERIENCE = [
             'Digging into <b>agentic workflows and evals</b> — LangGraph, DSPy, automated '
             'evaluation — the next step after the NVIDIA engine’s adoption lesson.']),
     dict(when="May — Nov 2025 · Taipei", org="NVIDIA",
-         role="Software Engineering Intern — AI diagnostic agent",
+         role="Android Software Engineer Intern — AI diagnostic agent",
          bullets=[
             'Built an AI diagnostic agent for system-level bug analysis — a Python '
             '<b>AST engine</b> extracts control-flow features so the LLM reads structure, '
@@ -73,7 +73,7 @@ EXPERIENCE = [
             '<b>Matched engineers’ own triage calls 82% of the time</b>; adopted as '
             'a permanent asset.']),
     dict(when="Jun — Aug 2024 · Hsinchu", org="Silicon Motion",
-         role="Verification Engineer Intern",
+         role="System Verification Development Engineer Intern",
          bullets=[
             'Cut manual test setup by <b>43%</b> with a full-stack device-management '
             'platform (React + Node.js) — remote chip power-cycling from the browser.']),
@@ -81,7 +81,7 @@ EXPERIENCE = [
          role="Software Engineer",
          bullets=[
             'Led an automation suite that modulates chip voltage from real-time thermal '
-            'and network data — <b>27% better power efficiency</b>.',
+            'and network data — <b>27% less core-rail dynamic power</b> at equal throughput.',
             'Automated IC programming (Python + Bash, Linux) with hardened firmware '
             'deployment — <b>45% less manual programming time</b>.']),
     dict(when="Mar 2021 — Jun 2022 · Hsinchu", org="Broadcom",
@@ -544,7 +544,7 @@ def hero_html(cards, solved):
     return f"""
   <header class="hero2" id="top">
     <div class="hero2-left">
-      <p class="kicker rv" style="--d:0s"><span>Yuan-Hsuan Wen</span><span aria-hidden="true">·</span><span>Learning in public</span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
+      <p class="kicker rv" style="--d:0s"><span>Phoebe Wen</span><span aria-hidden="true">·</span><span>Learning in public</span><span aria-hidden="true">·</span><span>Updated __BUILD_MONTH__<span class="ping" aria-hidden="true"></span></span></p>
       <h1 class="rv" style="--d:.15s">I work on<br><span class="h1-cyc" id="typed">clean algorithms</span></h1>
       <p class="hero-sub rv" style="--d:.3s">Systems engineer, moving into AI infrastructure.
       The practice, logged honestly — mistakes included.</p>
@@ -991,7 +991,7 @@ FOOTER = f"""
 
   <div class="progress" aria-hidden="true"><i id="prog"></i></div>
   <nav class="floatnav" id="floatnav" aria-label="Sections">
-    <a class="fn-brand" href="#top">Yuan-Hsuan Wen</a>
+    <a class="fn-brand" href="#top">Phoebe Wen</a>
     <a href="#start" data-sec="start">Start here</a>
     <a href="#xp" data-sec="xp">Résumé</a>
     <a href="#build" data-sec="build">How I build</a>
@@ -1029,10 +1029,10 @@ HEAD = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Yuan-Hsuan Wen — The reasoning, not just the code.</title>
+<title>Phoebe Wen — The reasoning, not just the code.</title>
 <meta name="description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — an early-career engineer learning CS &amp; AI in public.">
 <link rel="canonical" href="https://yuan-hsuan.github.io/">
-<meta name="author" content="Yuan-Hsuan Wen">
+<meta name="author" content="Phoebe Wen">
 <meta name="theme-color" content="#f1eee7">
 <!-- favicons -->
 <link rel="icon" href="/favicon.ico" sizes="any">
@@ -1040,22 +1040,22 @@ HEAD = """<!doctype html>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <!-- Open Graph (link previews on LinkedIn / Slack / iMessage) -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Yuan-Hsuan Wen">
-<meta property="og:title" content="Yuan-Hsuan Wen — The reasoning, not just the code.">
+<meta property="og:site_name" content="Phoebe Wen">
+<meta property="og:title" content="Phoebe Wen — The reasoning, not just the code.">
 <meta property="og:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
 <meta property="og:url" content="https://yuan-hsuan.github.io/">
 <meta property="og:image" content="https://yuan-hsuan.github.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Yuan-Hsuan Wen — engineer &amp; writer learning in public: LeetCode, CS224n/NLP notes, system design.">
+<meta property="og:image:alt" content="Phoebe Wen — engineer &amp; writer learning in public: LeetCode, CS224n/NLP notes, system design.">
 <!-- Twitter / X card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Yuan-Hsuan Wen — The reasoning, not just the code.">
+<meta name="twitter:title" content="Phoebe Wen — The reasoning, not just the code.">
 <meta name="twitter:description" content="LeetCode write-ups, CS224n NLP notes, and system-design study — learning CS &amp; AI in public.">
 <meta name="twitter:image" content="https://yuan-hsuan.github.io/og-image.png">
 <!-- structured data: mark this site up as a Person for Google -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Person","name":"Yuan-Hsuan Wen","url":"https://yuan-hsuan.github.io/","jobTitle":"Software Engineer","description":"Early-career software engineer learning CS & AI in public — LeetCode, CS224n/NLP, system design.","sameAs":["https://github.com/Yuan-Hsuan","https://www.linkedin.com/in/yuan-hsuan-wen/","https://leetcode.com/u/Yuan-Hsuan/"]}
+{"@context":"https://schema.org","@type":"Person","name":"Phoebe Wen","url":"https://yuan-hsuan.github.io/","jobTitle":"Software Engineer","description":"Early-career software engineer learning CS & AI in public — LeetCode, CS224n/NLP, system design.","sameAs":["https://github.com/Yuan-Hsuan","https://www.linkedin.com/in/yuan-hsuan-wen/","https://leetcode.com/u/Yuan-Hsuan/"]}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

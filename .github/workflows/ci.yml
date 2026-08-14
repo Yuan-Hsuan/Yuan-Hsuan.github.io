@@ -1,0 +1,39 @@
+name: CI
+
+# The site is a single generated file, so nothing here deploys — GitHub Pages already
+# serves the committed index.html. This job only answers one question: does the
+# generator still work on a machine that isn't Yuan's?
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 1. Does every file still parse? Cheapest possible check, stdlib only.
+      - name: Syntax
+        run: python -m compileall -q site
+
+      # 2. Bugs you can see without running the code: undefined names, unused
+      #    imports, unused locals. `--select F` = pyflakes rules only — no style
+      #    opinions, so this stays signal. ruff is a CI tool, not a project
+      #    dependency: build.py itself is still stdlib-only.
+      - name: Lint
+        run: |
+          pip install --quiet ruff
+          ruff check --select F site
+
+      # 3. Unit tests, plus `node --check` over the inline <script> blocks in the
+      #    generated page (node is preinstalled on the runner).
+      - name: Tests
+        run: python -m unittest discover -s site -p 'test_*.py' -v

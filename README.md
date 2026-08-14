@@ -1,4 +1,4 @@
-# Yuan-Hsuan Wen — Learning in Public 學習日誌
+# Phoebe Wen — Learning in Public 學習日誌
 
 > A living log of my CS / AI / LeetCode practice.
 > 這不是一個假裝完整的作品集，而是我實際在學、在練的公開紀錄。
