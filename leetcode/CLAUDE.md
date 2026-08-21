@@ -68,6 +68,65 @@ Interview-style write-up, in this order:
 3. **Review priority = `importance`**, not a spaced-repetition CLI. Re-drill the highest-
    importance problems by pitching aloud, then bump `last_reviewed`.
 
+## Backtracking notes — the six-slot pitch template
+
+Every `pattern: backtracking` note uses the same two subsections, in this order. The reference
+implementation is `93. Restore IP Addresses.md`; 22 / 46 / 47 / 78 follow it. Reuse the connective
+sentences verbatim — the point is that only the slot *contents* change between problems.
+
+```
+### The Strategy: <name of the approach>
+I'd model this as a backtracking problem. The problem wants **every** <thing>, so I have to
+build each one. <one clause on why the exponential search is affordable, from the constraints>
+
+### The Precise Execution
+To implement the backtracking, at each step:
+
+- **The state.** I would carry <params> down: ...
+- **The decision.** I decide **<the one decision this level makes>**.
+- **The options.** <the option set>.
+- **The undo.** After each call returns, I pop ... so the next choice starts from the same
+  state the previous one did.
+
+To finalize:
+
+- **The record.** When <condition>, I add the path to the answer.
+
+To optimize it, I return early when:      <- or "There is nothing to prune here:"
+- **The pruning.** <legality rule>. <dedup rule, or an explicit statement that none is needed>
+```
+
+- **Only "the decision" and "the options" really change between problems.** State / undo / record
+  are the same sentence with different nouns.
+- **Two kinds of pruning, always distinguish them.** *Legality* pruning answers "how do you avoid
+  dead ends"; *dedup* pruning answers "how do you avoid repeated answers". When a problem has
+  neither, say so out loud rather than skipping the slot (78 and 46 have neither; 93 and 22 have no
+  dedup; 47's whole point is the dedup rule).
+- **Skip `## 🎙️ Naive Solution` when backtracking is the first thing anyone would reach for**
+  (93 has no naive→optimal twist). Keep it only where the brute force is genuinely different, as in
+  22 (generate all `2^(2N)` strings, then validate).
+
+## The author's spoken-pitch voice
+
+Calibrated from her rewrites of drafted scripts (2026-08). Match this when drafting or polishing
+any spoken pitch — hers is tighter than the default.
+
+- **First person, present tense, contractions.** "I'd model this as…", "I decide…", "I have three."
+  Never the stiff construction "For the state, I recurse with two values" — she rewrites it every
+  time.
+- **Cut justification she considers self-evident.** She removed the "DP would help if I only needed
+  the count" line and the whole naive section from 93. Say why the approach is right *once*, in one
+  clause, and move on.
+- **Spoken connectives carry the structure.** "To implement the backtracking, at each step:" /
+  "To finalize:" / "To optimize it, I return early when:" — the transitions, not the labels, are
+  what make it sound like a person talking.
+- **A concrete instance beats an abstract rule in prose.** She rewrote the length-pruning inequality
+  as "only 2 segments left to build but 7 characters remaining".
+- **Complexity is the exception — she wants it formal.** State the practical bound first ("bounded
+  by a constant because the max length is 12 characters"), then the generalized parametric form
+  (`O(M^N · N)`). Don't substitute plain-language formulas like "(number of leaves) × (copy cost)",
+  and **don't edit a Complexity block she has written** unless she asks.
+
 ## Gotchas
 
 - **Images** live in a per-note `imgs/` subfolder and are referenced relatively

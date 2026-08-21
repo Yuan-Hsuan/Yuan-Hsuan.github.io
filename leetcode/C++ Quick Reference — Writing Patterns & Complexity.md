@@ -88,6 +88,27 @@ pointers until you're someone's left child.
   valid across insert and erase, so grabbing `nxt = next(it)` *before* `s.erase(it)` is the safe
   way to erase while scanning.
 
+## String
+
+* **`string::substr(pos, len)`**
+
+    ```cpp
+    int left = i;
+    s.substr(left + 1, right - left - 1);
+    ```
+
+* **int to a string**
+
+    ```cpp
+    string str = to_string(age);
+    ```
+
+* **string to int** (s to i)
+
+    ```cpp
+    int num = stoi(s);
+    ```
+
 ## String Operations = $O(L)$ Time
 
 * Copying, substrings, concatenation, and hashing all require traversing the string, taking $O(L)$ time ($L$ = length of string).
